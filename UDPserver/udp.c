@@ -8,7 +8,10 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "../MoorControl/motor.h"
+
 #define PORT 5000
+
 
 int main()
 {
@@ -43,11 +46,23 @@ int main()
         socklen_t len = sizeof(cliaddr);
         int n = recvfrom(listenfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr,&len);
         buffer[n] = '\0';
+        char *endptr;
         buffer[strcspn(buffer, "\r\n")] = 0;
+
         if(strcmp(buffer, "EXIT") == 0)
         {
             printf("EXITING \n");
             break;
+        }
+
+        double angle = strtod(buffer, &endptr);
+        if(*endptr != '\0')
+        {
+            printf("Parsing error at: %s \n", endptr);
+        }
+        else
+        {
+            rotate(angle);
         }
         printf("came message %s \n", buffer);
     }

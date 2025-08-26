@@ -1,0 +1,19 @@
+CC = gcc
+CFLAGS = -I/home/alikhan/DynamixelSDK/c/include/dynamixel_sdk
+LDFLAGS = -L/home/alikhan/DynamixelSDK/c/build/linux_sbc
+LDLIBS = -ldxl_sbc_c -lpthread
+
+SRCS = motor.c
+OBJS = $(SRCS:.c=.o)
+TARGET = motor_control
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+     $(CC) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+
+%.o: %.c
+     $(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+     rm -f $(OBJS) $(TARGET)
