@@ -202,7 +202,6 @@ int main()
         socklen_t len = sizeof(cliaddr);
         int n = recvfrom(listenfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr,&len);
         buffer[n] = '\0';
-        char *endptr;
         buffer[strcspn(buffer, "\r\n")] = 0;
 
         if(strcmp(buffer, "EXIT") == 0)
@@ -211,42 +210,28 @@ int main()
             break;
         }
 
-        char *token;
-        token = strtok(buffer, ";");
-        while(token != NULL)
+        char *ptr = buffer;
+
+        while(*ptr)
         {
-            char *key;
-            key = strtok(token, ":");
-            if(strcmp(key, "angle") == 0)
+            if(strncmp(ptr, "angle:", 6) == 0)
             {
-                key = strtok(NULL, ":");
-                double angle = strtod(&key, &endptr);
-                if(*endptr != '\0')
-                {
-                    printf("Parsing error at: %s \n", endptr);
-                }
-                else
-                {
-                    rotateMotor(angle);
-                }
+                ptr += 6;
+                double  angle = strtod(ptr, &ptr);
+                rotateMotor(angle);                
             }
-            else if(strcmp(key, "velocity") == 0)
+            else if(strncmp(ptr, "velocity:", 9) == 0)
             {
-                key = strtok(NULL, ":");
-                double velocity = strtod(&key, &endptr);
-                if(*endptr != '\0')
-                {
-                    printf("Parsing error at: %s \n", endptr);
-                }
-                else
-                {
-                    setProfileVelocity(velocity);
-                }
+                ptr += 9;
+                double velocity = strtod(ptr, &ptr);
+                setProfileVelocity(velocity);
             }
-            token = strtok(NULL, ";");
+            else 
+            {
+                ptr++;
+            }
         }
 
-        
         printf("came message %s \n", buffer);
     }
     close(listenfd);
