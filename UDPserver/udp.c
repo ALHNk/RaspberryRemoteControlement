@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "../MoorControl/motor.h"
+#include "../MoorControl/motor.c"
 
 #define PORT 5000
 

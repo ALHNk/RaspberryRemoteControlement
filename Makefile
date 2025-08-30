@@ -13,14 +13,16 @@ CC          = gcc
 CFLAGS      = -O2 -DLINUX -D_GNU_SOURCE -Wall -g $(INCLUDES) -MMD -MP
 LDFLAGS     = $(CFLAGS)
 
+SRC_DIRS = UdpServer MoorController
+
 # инклуды и либы
 INCLUDES   += -I$(DIR_DXL)/include/dynamixel_sdk
 LIBRARIES  += -L$(DIR_DXL)/build/linux_sbc -ldxl_sbc_c -lpthread -lrt \
               -Wl,-rpath,$(DIR_DXL)/build/linux_sbc
 
 # исходники
-SOURCES     = app.c udp.c motor.c
-OBJECTS     = $(addsuffix .o,$(addprefix $(DIR_OBJS)/,$(basename $(notdir $(SOURCES)))))
+SOURCES     = $(wildcard $(addsuffix /*.c,$(SRC_DIRS)))
+OBJECTS     = $(SOURCES:.c=.o)
 DEPS        = $(OBJECTS:.o=.d)
 
 # правила
