@@ -156,15 +156,20 @@ int disconnectMotor()
     return 0;
 }
 
+int connfd, sockfd;
+
 void handle_sigint(int sig)
 {
     printf("Exitting \n");
     disconnectMotor();
+    close(connfd);
+    close(sockfd);
     exit(0);
 
 }
 
-#define PORT 5000
+#define PORT 5050
+#define MAX 100
 int main()
 { 
     signal(SIGINT, handle_sigint);
@@ -172,14 +177,21 @@ int main()
     {
         return 1;
     }
-    char buffer[100];
-    int listenfd;
+    const char *SECRET = getenv("MOTOR_SECRET");
+    if(!SECRET)
+    {
+        fprintf(stderr, "Secret is not set\n");
+        exit(1);
+    }
+    char buffer[MAX];
+    
+    socklen_t len;
 
     struct sockaddr_in servaddr, cliaddr;
     memset(&servaddr, 0, sizeof(servaddr));
 
-    listenfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(listenfd < 0)
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if(sockfd < 0)
     {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
@@ -188,53 +200,107 @@ int main()
     servaddr.sin_port = htons(PORT);
     servaddr.sin_family = AF_INET;
 
-    if(bind(listenfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+    if(bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
     {
         perror("bind failed");
-        close(listenfd);
+        close(sockfd);
         exit(EXIT_FAILURE);
     }
 
-    printf("UDP server started at port: %d \n", PORT);
+    printf("TCP server started at port: %d \n", PORT);
 
+    if((listen(sockfd,5)) != 0)
+    {
+        perror("Listen Failed\n");
+        exit(EXIT_FAILURE);
+    }
+    else {
+        printf("Server started listenning \n");
+    }
+    len = sizeof(cliaddr);
     while(1)
     {
-        socklen_t len = sizeof(cliaddr);
-        int n = recvfrom(listenfd, buffer, sizeof(buffer), 0, (struct sockaddr*)&cliaddr,&len);
-        buffer[n] = '\0';
+        connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &len);
+        if(connfd < 0)
+        {
+            perror("Accept failed");
+            continue;
+        }
+        else{
+            printf("Connected\n");
+            write(connfd, "connected\n", 11);
+        }
+        int n = read(connfd, buffer, sizeof(buffer));
+        if( n <=0)
+        {
+            perror("Client failed to send secret\n");
+            close(connfd);
+            continue;
+        }
+
         buffer[strcspn(buffer, "\r\n")] = 0;
 
-        if(strcmp(buffer, "EXIT") == 0)
+        if(strcmp(buffer, SECRET) != 0)
         {
-            printf("EXITING \n");
-            break;
+            printf("Wrong Secret\n");
+            write(connfd, "unauthorized\n", 13);
+            close(connfd);
+            continue;
         }
 
-        char *ptr = buffer;
+        printf("Client accepted\n");
+        write(connfd, "accepted\n",10 );
 
-        while(*ptr)
+        while(1)
         {
-            if(strncmp(ptr, "angle:", 6) == 0)
+            int n = read(connfd, buffer, sizeof(buffer));
+            if(n == 0 )
             {
-                ptr += 6;
-                double  angle = strtod(ptr, &ptr);
-                rotateMotor(angle);                
+                printf("Client Disconnected ! \n");
+                break;
             }
-            else if(strncmp(ptr, "velocity:", 9) == 0)
+            else if(n < 0 )
             {
-                ptr += 9;
-                double velocity = strtod(ptr, &ptr);
-                setProfileVelocity(velocity);
-            }
-            else 
-            {
-                ptr++;
-            }
-        }
+                perror("Error receiving from client \n");
+            }        buffer[n] = '\0';
+            buffer[strcspn(buffer, "\r\n")] = 0;
 
-        printf("came message %s \n", buffer);
+            if(strcmp(buffer, "EXIT") == 0)
+            {
+                printf("EXITING \n");
+                break;
+            }
+
+            char *ptr = buffer;
+
+            while(*ptr)
+            {
+                if(strncmp(ptr, "angle:", 6) == 0)
+                {
+                    ptr += 6;
+                    double  angle = strtod(ptr, &ptr);
+                    rotateMotor(angle);                
+                }
+                else if(strncmp(ptr, "velocity:", 9) == 0)
+                {
+                    ptr += 9;
+                    double velocity = strtod(ptr, &ptr);
+                    setProfileVelocity(velocity);
+                }
+                else 
+                {
+                    ptr++;
+                }
+            }
+
+            printf("came message %s \n", buffer);
+        }
+        printf("Closing client \n");
+        close(connfd);
     }
-    close(listenfd);
+
+    
+    close(sockfd);
     disconnectMotor();
     return 0;
 }

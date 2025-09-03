@@ -66,7 +66,7 @@ int main()
     while(1)
     {
         socklen_t len = sizeof(cliaddr);
-        int n = read(sockfd, buffer, sizeof(buffer));
+        int n = read(connfd, buffer, sizeof(buffer));
         if(n == 0 )
         {
             printf("Client Disconnected ! \n");
