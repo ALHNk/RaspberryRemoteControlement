@@ -200,6 +200,12 @@ int main()
     servaddr.sin_port = htons(PORT);
     servaddr.sin_family = AF_INET;
 
+    int opt = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+         perror("setsockopt(SO_REUSEADDR) failed");
+         exit(EXIT_FAILURE);
+     }
+
     if(bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
     {
         perror("bind failed");
