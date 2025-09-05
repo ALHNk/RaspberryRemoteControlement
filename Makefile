@@ -1,45 +1,40 @@
 #################################################
-# PROJECT: App (udp + motor)
+# PROJECT: Motor TCP Server
 ##################################################
 
-TARGET      = app
+TARGET      = motor_server
 
-# пути
-DIR_DXL     = /home/alikhan/DynamixelSDK/c
-DIR_OBJS    = .objects
+DIR_DXL    = /home/alikhan/DynamixelSDK/c
+DIR_OBJS   = .objects
 
-# компилятор / флаги
 CC          = gcc
-CFLAGS      = -O2 -DLINUX -D_GNU_SOURCE -Wall -g $(INCLUDES) -MMD -MP
-LDFLAGS     = $(CFLAGS)
+CX          = g++
+CCFLAGS     = -O2 -DLINUX -D_GNU_SOURCE -Wall $(INCLUDES) -g
+CXFLAGS     = -O2 -DLINUX -D_GNU_SOURCE -Wall $(INCLUDES) -g
+LNKCC       = $(CX)
+LNKFLAGS    = $(CXFLAGS)
 
-SRC_DIRS = UdpServer MoorController
+INCLUDES   += -I$(DIR_DXL)/include/dynamixel_sdk -I./MoorControl
+LIBRARIES  += -L$(DIR_DXL)/build/linux_sbc -ldxl_sbc_c -lpthread -lrt
 
-# инклуды и либы
-INCLUDES   += -I$(DIR_DXL)/include/dynamixel_sdk
-LIBRARIES  += -L$(DIR_DXL)/build/linux_sbc -ldxl_sbc_c -lpthread -lrt \
-              -Wl,-rpath,$(DIR_DXL)/build/linux_sbc
-
-# исходники
-SOURCES     = $(wildcard $(addsuffix /*.c,$(SRC_DIRS)))
-OBJECTS     = $(SOURCES:.c=.o)
-DEPS        = $(OBJECTS:.o=.d)
+# файлы
+SOURCES = TCP/tcp.c MoorControl/motor.c
+OBJECTS = $(addsuffix .o,$(addprefix $(DIR_OBJS)/,$(basename $(notdir $(SOURCES)))))
 
 # правила
-all: $(TARGET)
-
 $(TARGET): make_directory $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(TARGET) $(LIBRARIES)
+	$(LNKCC) $(LNKFLAGS) $(OBJECTS) -o $(TARGET) $(LIBRARIES)
 
-make_directory:
-	mkdir -p $(DIR_OBJS)/
-
-$(DIR_OBJS)/%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+all: $(TARGET)
 
 clean:
 	rm -rf $(TARGET) $(DIR_OBJS) core *~ *.a *.so *.lo
 
--include $(DEPS)
+make_directory:
+	mkdir -p $(DIR_OBJS)/
 
-.PHONY: all clean make_directory
+$(DIR_OBJS)/%.o: TCP/%.c
+	$(CC) $(CCFLAGS) -c $< -o $@
+
+$(DIR_OBJS)/%.o: MoorControl/%.c
+	$(CC) $(CCFLAGS) -c $< -o $@
