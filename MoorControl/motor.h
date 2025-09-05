@@ -3,8 +3,10 @@
 
 #include <stdint.h>
 
-int connect();
-void rotate(double angle);
-int disconnect();
+int connectMotor();
+void rotateMotor(double angle);
+int disconnectMotor();
+void setProfileVelocity(double velcoity);
+uint32_t getProfileVelocity();                                                                                                                                                                                                                                  
 
 #endif

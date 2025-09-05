@@ -1,4 +1,4 @@
-// #include "motor.h"
+#include "motor.h"
 #include "dynamixel_sdk/dynamixel_sdk.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -18,6 +18,7 @@
 #define ADDR_MX_PRESENT_POSITION        132  
 #define ADDR_MX_PROFILE_VELOCITY        112
 #define ADDR_MX_PROFILE_ACCELERATION    108
+#define ADDR_MX_PRESENT_PROFILE_VELOCITY 128
 //END of MX ADDRESES
 
 #define PROTOCOL_VERSION                2.0                 //  DONT FORGET TO CHANGE IF NEEDED
@@ -105,6 +106,24 @@ void setProfileVelocity(double velocity)
     write4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID, ADDR_MX_PROFILE_VELOCITY, velocity);
 }
 
+uint32_t getProfileVelocity()
+{
+    uint32_t velocity = read4ByteTxRx(port_num, PROTOCOL_VERSION, DXL_ID, ADDR_MX_PROFILE_VELOCITY);
+
+    if ((dxl_comm_result = getLastTxRxResult(port_num, PROTOCOL_VERSION)) != COMM_SUCCESS)
+    {
+        printTxRxResult(PROTOCOL_VERSION, dxl_comm_result);
+        return -1;
+    }
+    else if ((dxl_error = getLastRxPacketError(port_num, PROTOCOL_VERSION)) != 0)
+    {
+        printRxPacketError(PROTOCOL_VERSION, dxl_error);
+        return -1;
+    }
+    return velocity;
+
+}
+
 void rotateMotor(double angle)
 {
     int goal_position = (int)(angle * DXL_RESOLUTION / DXL_ANGLE_LIMIT );
@@ -158,158 +177,161 @@ int disconnectMotor()
 
 int connfd, sockfd;
 
-void handle_sigint(int sig)
-{
-    printf("Exitting \n");
-    disconnectMotor();
-    close(connfd);
-    close(sockfd);
-    exit(0);
+// void handle_sigint(int sig)
+// {
+//     printf("Exitting \n");
+//     disconnectMotor();
+//     close(connfd);
+//     close(sockfd);
+//     exit(0);
 
-}
+// }
 
-#define PORT 5050
-#define MAX 100
-int main()
-{ 
-    signal(SIGINT, handle_sigint);
-    if(connectMotor() != 0 )
-    {
-        return 1;
-    }
-    const char *SECRET = getenv("MOTOR_SECRET");
-    if(!SECRET)
-    {
-        fprintf(stderr, "Secret is not set\n");
-        exit(1);
-    }
-    char buffer[MAX];
+// #define PORT 5050
+// #define MAX 100
+// int main()
+// { 
+//     signal(SIGINT, handle_sigint);
+//     if(connectMotor() != 0 )
+//     {
+//         return 1;
+//     }
+//     const char *SECRET = getenv("MOTOR_SECRET");
+//     if(!SECRET)
+//     {
+//         fprintf(stderr, "Secret is not set\n");
+//         exit(1);
+//     }
+//     char buffer[MAX];
     
-    socklen_t len;
+//     socklen_t len;
 
-    struct sockaddr_in servaddr, cliaddr;
-    memset(&servaddr, 0, sizeof(servaddr));
+//     struct sockaddr_in servaddr, cliaddr;
+//     memset(&servaddr, 0, sizeof(servaddr));
 
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if(sockfd < 0)
-    {
-        perror("Socket creation failed");
-        exit(EXIT_FAILURE);
-    }
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(PORT);
-    servaddr.sin_family = AF_INET;
+//     sockfd = socket(AF_INET, SOCK_STREAM, 0);
+//     if(sockfd < 0)
+//     {
+//         perror("Socket creation failed");
+//         exit(EXIT_FAILURE);
+//     }
+//     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+//     servaddr.sin_port = htons(PORT);
+//     servaddr.sin_family = AF_INET;
 
-    int opt = 1;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-         perror("setsockopt(SO_REUSEADDR) failed");
-         exit(EXIT_FAILURE);
-     }
+//     int opt = 1;
+//     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+//          perror("setsockopt(SO_REUSEADDR) failed");
+//          exit(EXIT_FAILURE);
+//      }
 
-    if(bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
-    {
-        perror("bind failed");
-        close(sockfd);
-        exit(EXIT_FAILURE);
-    }
+//     if(bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
+//     {
+//         perror("bind failed");
+//         close(sockfd);
+//         exit(EXIT_FAILURE);
+//     }
 
-    printf("TCP server started at port: %d \n", PORT);
+//     printf("TCP server started at port: %d \n", PORT);
 
-    if((listen(sockfd,5)) != 0)
-    {
-        perror("Listen Failed\n");
-        exit(EXIT_FAILURE);
-    }
-    else {
-        printf("Server started listenning \n");
-    }
-    len = sizeof(cliaddr);
-    while(1)
-    {
-        connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &len);
-        if(connfd < 0)
-        {
-            perror("Accept failed");
-            continue;
-        }
-        else{
-            printf("Connected\n");
-            write(connfd, "connected\n", 11);
-        }
-        int n = read(connfd, buffer, sizeof(buffer));
-        if( n <=0)
-        {
-            perror("Client failed to send secret\n");
-            close(connfd);
-            continue;
-        }
+//     if((listen(sockfd,5)) != 0)
+//     {
+//         perror("Listen Failed\n");
+//         exit(EXIT_FAILURE);
+//     }
+//     else {
+//         printf("Server started listenning \n");
+//     }
+//     len = sizeof(cliaddr);
+//     while(1)
+//     {
+//         connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &len);
+//         if(connfd < 0)
+//         {
+//             perror("Accept failed");
+//             continue;
+//         }
+//         else{
+//             printf("Connected\n");
+//             // write(connfd, "connected\n", 11);
+//         }
+//         int n = read(connfd, buffer, sizeof(buffer));
+//         if( n <=0)
+//         {
+//             perror("Client failed to send secret\n");
+//             close(connfd);
+//             continue;
+//         }
 
-        buffer[strcspn(buffer, "\r\n")] = 0;
+//         buffer[strcspn(buffer, "\r\n")] = 0;
 
-        if(strcmp(buffer, SECRET) != 0)
-        {
-            printf("Wrong Secret\n");
-            write(connfd, "unauthorized\n", 13);
-            close(connfd);
-            continue;
-        }
+//         if(strcmp(buffer, SECRET) != 0)
+//         {
+//             printf("Wrong Secret\n%s\n", buffer);
+//             write(connfd, "unauthorized\n", 13);
+//             close(connfd);
+//             continue;
+//         }
 
-        printf("Client accepted\n");
-        write(connfd, "accepted\n",10 );
+//         printf("Client accepted\n");
+//         uint32_t velosityStored = getProfileVelocity();
+//         char reply[50];
+//         snprintf(reply,sizeof(reply),"accepted\nvelocity:%d\n",velosityStored);
+//         write(connfd, reply, strlen(reply));
 
-        while(1)
-        {
-            int n = read(connfd, buffer, sizeof(buffer));
-            if(n == 0 )
-            {
-                printf("Client Disconnected ! \n");
-                break;
-            }
-            else if(n < 0 )
-            {
-                perror("Error receiving from client \n");
-            }        buffer[n] = '\0';
-            buffer[strcspn(buffer, "\r\n")] = 0;
+//         while(1)
+//         {
+//             int n = read(connfd, buffer, sizeof(buffer));
+//             if(n == 0 )
+//             {
+//                 printf("Client Disconnected ! \n");
+//                 break;
+//             }
+//             else if(n < 0 )
+//             {
+//                 perror("Error receiving from client \n");
+//             }        buffer[n] = '\0';
+//             buffer[strcspn(buffer, "\r\n")] = 0;
 
-            if(strcmp(buffer, "EXIT") == 0)
-            {
-                printf("EXITING \n");
-                break;
-            }
+//             if(strcmp(buffer, "EXIT") == 0)
+//             {
+//                 printf("EXITING \n");
+//                 break;
+//             }
 
-            char *ptr = buffer;
+//             char *ptr = buffer;
 
-            while(*ptr)
-            {
-                if(strncmp(ptr, "angle:", 6) == 0)
-                {
-                    ptr += 6;
-                    double  angle = strtod(ptr, &ptr);
-                    rotateMotor(angle);                
-                }
-                else if(strncmp(ptr, "velocity:", 9) == 0)
-                {
-                    ptr += 9;
-                    double velocity = strtod(ptr, &ptr);
-                    setProfileVelocity(velocity);
-                }
-                else 
-                {
-                    ptr++;
-                }
-            }
-
-            printf("came message %s \n", buffer);
-        }
-        printf("Closing client \n");
-        close(connfd);
-    }
+//             while(*ptr)
+//             {
+//                 if(strncmp(ptr, "angle:", 6) == 0)
+//                 {
+//                     ptr += 6;
+//                     double  angle = strtod(ptr, &ptr);
+//                     rotateMotor(angle);                
+//                 }
+//                 else if(strncmp(ptr, "velocity:", 9) == 0)
+//                 {
+//                     ptr += 9;
+//                     double velocity = strtod(ptr, &ptr);
+//                     setProfileVelocity(velocity);
+//                 }
+//                 else 
+//                 {
+//                     ptr++;
+//                 }
+//             }
+//             printf("came message %s \n", buffer);
+//             memset(buffer, 0, MAX);
+//         }
+//         printf("Closing client \n");
+//         close(connfd);
+//     }
 
     
-    close(sockfd);
-    disconnectMotor();
-    return 0;
-}
+//     close(sockfd);
+//     disconnectMotor();
+//     return 0;
+// }
 
 // int main ()
 // {
