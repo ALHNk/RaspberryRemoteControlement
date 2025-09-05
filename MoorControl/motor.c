@@ -175,7 +175,7 @@ int disconnectMotor()
     return 0;
 }
 
-int connfd, sockfd;
+// int connfd, sockfd;
 
 // void handle_sigint(int sig)
 // {
