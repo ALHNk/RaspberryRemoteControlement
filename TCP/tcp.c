@@ -11,14 +11,21 @@
 
 #include "../MoorControl/motor.h"
 
+#define MOTOR_TYPE 1                 // if MX it is 0 if Pro it is 1
+#define ALL_MOTORS 3                 //change it here and MOTORS_QUANTITY in ../MoorController/motor.c
+
 int connfd, sockfd;
 
 void handle_sigint(int sig)
 {
     printf("Exitting \n");
-    disconnectMotor();
+    for(int i = 0; i < ALL_MOTORS; i++)
+    {
+        disconnectMotor(i, MOTOR_TYPE);
+    }
     close(connfd);
     close(sockfd);
+    closeMotorPort();
     exit(0);
 
 }
@@ -27,10 +34,17 @@ void handle_sigint(int sig)
 int main()
 { 
     signal(SIGINT, handle_sigint);
-    if(connectMotor() != 0 )
+    openMotorPort();
+    for(int i = 0; i < ALL_MOTORS; i++)
     {
-        return 1;
+        if(connectMotor(i, MOTOR_TYPE) != 0 )
+        {
+            return 1;
+        }
     }
+
+    
+    
     const char *SECRET = getenv("MOTOR_SECRET");
     if(!SECRET)
     {
@@ -109,7 +123,7 @@ int main()
         }
 
         printf("Client accepted\n");
-        uint32_t velosityStored = getProfileVelocity();
+        uint32_t velosityStored = getProfileVelocity(0, MOTOR_TYPE);              // DO NOT FORGET ABPOUT THIS LINE IN THE FUTURE
         char reply[50];
         snprintf(reply,sizeof(reply),"accepted\nvelocity:%d\n",velosityStored);
         write(connfd, reply, strlen(reply));
@@ -135,20 +149,26 @@ int main()
             }
 
             char *ptr = buffer;
+            uint8_t motor_id = 0;
 
             while(*ptr)
             {
-                if(strncmp(ptr, "angle:", 6) == 0)
+                if(strncmp(ptr, "motor:", 6) == 0)
+                {
+                    ptr += 6;
+                    motor_id = strtod(ptr, &ptr);
+                }
+                else if(strncmp(ptr, "angle:", 6) == 0)
                 {
                     ptr += 6;
                     double  angle = strtod(ptr, &ptr);
-                    rotateMotor(angle);                
+                    rotateMotor(angle, motor_id, MOTOR_TYPE);                
                 }
                 else if(strncmp(ptr, "velocity:", 9) == 0)
                 {
                     ptr += 9;
                     double velocity = strtod(ptr, &ptr);
-                    setProfileVelocity(velocity);
+                    setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
                 }
                 else 
                 {
@@ -164,6 +184,10 @@ int main()
 
     
     close(sockfd);
-    disconnectMotor();
+    for (int i = 0; i < ALL_MOTORS; i++){
+         disconnectMotor(i, MOTOR_TYPE);
+
+    }
+    closeMotorPort();
     return 0;
 }
