@@ -19,6 +19,7 @@
 #define ADDR_MX_PROFILE_VELOCITY        112
 #define ADDR_MX_PROFILE_ACCELERATION    108
 #define ADDR_MX_PRESENT_PROFILE_VELOCITY 128
+#define ADDR_MX_GOAL_VELOCITY              552   //CHANGE
 //END of MX ADDRESES
 
 //PRO H42P-020-S300-R ADDRESSES
@@ -28,6 +29,7 @@
 #define ADDR_PRO_PROFILE_VELOCITY         560
 #define ADDR_PRO_PROFILE_ACCELERATION     556
 #define ADDR_PRO_PRESENT_PROFILE_VELOCITY 576
+#define ADDR_PRO_GOAL_VELOCITY            552
 //END PRO
 
 #define PROTOCOL_VERSION                2.0                 //  DONT FORGET TO CHANGE IF NEEDED
@@ -159,6 +161,26 @@ void setProfileVelocity(double velocity, uint8_t motor_index, uint8_t motor_mode
     }
 
     write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, velocity);
+}
+
+void setGoalSpeed(double speed, uint8_t motor_index, uint8_t motor_model)
+{
+    uint16_t addres = -1;
+    switch(motor_model)
+    {
+        case 0:
+            addres = ADDR_MX_GOAL_VELOCITY;
+            break;
+        case 1:
+            addres = ADDR_PRO_GOAL_VELOCITY;
+            speed *= 1000;
+            break;
+        default:
+        printf("NOT A MODEL\n");
+        return ;
+    }
+
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, speed);
 }
 
 uint32_t getProfileVelocity(uint8_t motor_index, uint8_t motor_model)

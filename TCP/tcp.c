@@ -162,6 +162,8 @@ int main()
                 {
                     ptr += 6;
                     double  angle = strtod(ptr, &ptr);
+                    if(angle > 180) angle -=360;
+                    else if(angle < -180) angle +=360;
                     rotateMotor(angle, motor_id, MOTOR_TYPE);                
                 }
                 else if(strncmp(ptr, "velocity:", 9) == 0)
@@ -169,6 +171,12 @@ int main()
                     ptr += 9;
                     double velocity = strtod(ptr, &ptr);
                     setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
+                }
+                else if(strncmp(ptr, "speed:", 6) == 0)
+                {
+                    ptr += 6;
+                    double speed = strtod(ptr, &ptr);
+                    setGoalSpeed(speed, motor_id, MOTOR_TYPE);
                 }
                 else 
                 {
