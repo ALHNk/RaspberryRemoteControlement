@@ -61,6 +61,9 @@
 
 #define PRO_RESOLUTION 607500
 
+#define MOTOR_MX        0
+#define MOTOR_PRO       1
+
 int port_num;
 // int motor_index;
 int dxl_comm_result;
@@ -117,15 +120,15 @@ int connectMotor(uint8_t motor_index, uint8_t motor_model)
     uint16_t addres = -1;
     switch(motor_model)
     {
-        case 0:
+        case MOTOR_MX:
             addres = ADDR_MX_TORQUE_ENABLE;
             break;
-        case 1:
+        case MOTOR_PRO:
             addres = ADDR_PRO_TORQUE_ENABLE;
             break;
         default:
-        printf("NOT A MODEL\n");
-        return -1;
+            printf("NOT A MODEL ERRROR in connectMotor Function\n");
+            return -1;
     }
 
     write1ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, TORQUE_ENABLE);
@@ -146,56 +149,56 @@ int connectMotor(uint8_t motor_index, uint8_t motor_model)
 
 void setProfileVelocity(double velocity, uint8_t motor_index, uint8_t motor_model)
 {
-    uint16_t addres = -1;
+    int32_t addres = -1;
     switch(motor_model)
     {
-        case 0:
+        case MOTOR_MX:
             addres = ADDR_MX_PROFILE_VELOCITY;
             break;
-        case 1:
+        case MOTOR_PRO:
             addres = ADDR_PRO_PROFILE_VELOCITY;
             break;
         default:
-        printf("NOT A MODEL\n");
-        return ;
+            printf("NOT A MODEL\n");
+            return ;
     }
 
-    write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, velocity);
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, (uint32_t) velocity);
 }
 
 void setGoalSpeed(double speed, uint8_t motor_index, uint8_t motor_model)
 {
-    uint16_t addres = -1;
+    int32_t addres = -1;
     switch(motor_model)
     {
-        case 0:
+        case MOTOR_MX:
             addres = ADDR_MX_GOAL_VELOCITY;
             break;
-        case 1:
+        case MOTOR_PRO:
             addres = ADDR_PRO_GOAL_VELOCITY;
-            speed *= 1000;
+            speed *= 100;
             break;
         default:
-        printf("NOT A MODEL\n");
+        printf("NOT A MODEL error in setGoalSpeed\n");
         return ;
     }
 
-    write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, speed);
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, (uint32_t) speed);
 }
 
 uint32_t getProfileVelocity(uint8_t motor_index, uint8_t motor_model)
 {
-    uint16_t addres = -1;
+    int32_t addres = -1;
     switch(motor_model)
     {
-        case 0:
+        case MOTOR_MX:
             addres = ADDR_MX_PROFILE_VELOCITY;
             break;
-        case 1:
+        case MOTOR_PRO:
             addres = ADDR_PRO_PROFILE_VELOCITY;
             break;
         default:
-        printf("NOT A MODEL\n");
+        printf("NOT A MODEL merror in getProfileVelocity\n");
         return -1;
     }
 
@@ -218,24 +221,32 @@ uint32_t getProfileVelocity(uint8_t motor_index, uint8_t motor_model)
 
 void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
 {
-    uint16_t addres = -1;
+    int32_t addres = -1;
     int resolution = -1;
     switch(motor_model)
     {
-        case 0:
+        case MOTOR_MX:
             addres = ADDR_MX_GOAL_POSITION;
             resolution = DXL_RESOLUTION;
             break;
-        case 1:
+        case MOTOR_PRO:
             addres = ADDR_PRO_GOAL_POSITION;
             resolution = PRO_RESOLUTION;
             break;
         default:
-        printf("NOT A MODEL\n");
+        printf("NOT A MODEL error in rotateMotor\n");
         return ;
     }
 
     int goal_position = (int)(angle * resolution / DXL_ANGLE_LIMIT );
+    if(motor_index == 0 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_FIRST || goal_position < PRO_MINIMUN_POSITION_VALUE_FIRST))
+    {
+        return;
+    }
+    if(motor_index ==1 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_SECOND || goal_position < PRO_MINIMUN_POSITION_VALUE_SECOND))
+    {
+        return;
+    }
 
     write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, goal_position);
 
@@ -268,13 +279,13 @@ void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
 }
 int disconnectMotor(uint8_t motor_index, uint8_t motor_model)
 {
-    uint16_t addres = -1;
+    int32_t addres = -1;
     switch(motor_model)
     {
-        case 0:
+        case MOTOR_MX:
             addres = ADDR_MX_TORQUE_ENABLE;
             break;
-        case 1:
+        case MOTOR_PRO:
             addres = ADDR_PRO_TORQUE_ENABLE;
             break;
         default:

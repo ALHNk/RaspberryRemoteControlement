@@ -148,42 +148,47 @@ int main()
                 break;
             }
 
-            char *ptr = buffer;
-            uint8_t motor_id = 0;
-
-            while(*ptr)
+            char *line = strtok(buffer, "\n");
+            while(line != NULL)
             {
-                if(strncmp(ptr, "motor:", 6) == 0)
+                char *ptr = line;
+                uint8_t motor_id = 0;
+
+                while(*ptr)
                 {
-                    ptr += 6;
-                    motor_id = strtod(ptr, &ptr);
+                    if(strncmp(ptr, "motor:", 6) == 0)
+                    {
+                        ptr += 6;
+                        motor_id = strtod(ptr, &ptr);
+                    }
+                    else if(strncmp(ptr, "angle:", 6) == 0)
+                    {   
+                        ptr += 6;
+                        double  angle = strtod(ptr, &ptr);
+                        if(angle > 180) angle -=360;
+                        else if(angle < -180) angle +=360;
+                        rotateMotor(angle, motor_id, MOTOR_TYPE);                
+                    }
+                    else if(strncmp(ptr, "velocity:", 9) == 0)
+                    {
+                        ptr += 9;
+                        double velocity = strtod(ptr, &ptr);
+                        setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
+                    }
+                    else if(strncmp(ptr, "speed:", 6) == 0)
+                    {
+                        ptr += 6;
+                        double speed = strtod(ptr, &ptr);
+                        setGoalSpeed(speed, motor_id, MOTOR_TYPE);
+                    }
+                    else 
+                    {
+                        ptr++;
+                    }
                 }
-                else if(strncmp(ptr, "angle:", 6) == 0)
-                {
-                    ptr += 6;
-                    double  angle = strtod(ptr, &ptr);
-                    if(angle > 180) angle -=360;
-                    else if(angle < -180) angle +=360;
-                    rotateMotor(angle, motor_id, MOTOR_TYPE);                
-                }
-                else if(strncmp(ptr, "velocity:", 9) == 0)
-                {
-                    ptr += 9;
-                    double velocity = strtod(ptr, &ptr);
-                    setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
-                }
-                else if(strncmp(ptr, "speed:", 6) == 0)
-                {
-                    ptr += 6;
-                    double speed = strtod(ptr, &ptr);
-                    setGoalSpeed(speed, motor_id, MOTOR_TYPE);
-                }
-                else 
-                {
-                    ptr++;
-                }
-            }
-            printf("came message %s \n", buffer);
+                printf("came message %s \n", line);
+                line = strtok(NULL, "\n");
+            }            
             memset(buffer, 0, MAX);
         }
         printf("Closing client \n");
