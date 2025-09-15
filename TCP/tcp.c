@@ -123,10 +123,43 @@ int main()
         }
 
         printf("Client accepted\n");
-        uint32_t velosityStored = getProfileVelocity(0, MOTOR_TYPE);              // DO NOT FORGET ABPOUT THIS LINE IN THE FUTURE
-        char reply[50];
-        snprintf(reply,sizeof(reply),"accepted\nvelocity:%d\n",velosityStored);
-        write(connfd, reply, strlen(reply));
+        // uint32_t velosityStored = getProfileVelocity(0, MOTOR_TYPE);              // DO NOT FORGET ABPOUT THIS LINE IN THE FUTURE
+        // char reply[50];
+        // snprintf(reply,sizeof(reply),"accepted\nvelocity:%d\n",velosityStored);
+        // write(connfd, reply, strlen(reply));
+
+        uint32_t motor1velocity = getProfileVelocity(0, MOTOR_TYPE);
+        uint32_t motor2velocity = getProfileVelocity(1, MOTOR_TYPE);
+        uint32_t motor1position = getPosition(0, MOTOR_TYPE);
+        uint32_t motor2position = getPosition(1, MOTOR_TYPE);
+        uint32_t motor1limitlow = getLimitLow(0, MOTOR_TYPE);
+        uint32_t motor1limitup  = getLimitUp(0, MOTOR_TYPE);
+        uint32_t motor2limitlow = getLimitLow(1, MOTOR_TYPE);
+        uint32_t motor2limitup  = getLimitUp(1, MOTOR_TYPE);
+        
+        char reply[512];
+        snprintf(reply, sizeof(reply),
+            "{"
+            "\"status\":\"accepted\","
+            "\"motor1velocity\":%u,"
+            "\"motor2velocity\":%u,"
+            "\"motor1position\":%u,"
+            "\"motor2position\":%u,"
+            "\"motor1limitlow\":%u,"
+            "\"motor1limitup\":%u,"
+            "\"motor2limitlow\":%u,"
+            "\"motor2limitup\":%u"
+            "}",
+            motor1velocity,
+            motor2velocity,
+            motor1position,
+            motor2position,
+            motor1limitlow,
+            motor1limitup,
+            motor2limitlow,
+            motor2limitup
+        );
+
 
         while(1)
         {
