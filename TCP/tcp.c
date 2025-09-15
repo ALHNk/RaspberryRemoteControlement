@@ -130,8 +130,8 @@ int main()
 
         uint32_t motor1velocity = getProfileVelocity(0, MOTOR_TYPE);
         uint32_t motor2velocity = getProfileVelocity(1, MOTOR_TYPE);
-        uint32_t motor1position = getPosition(0, MOTOR_TYPE);
-        uint32_t motor2position = getPosition(1, MOTOR_TYPE);
+        double motor1position = getPosition(0, MOTOR_TYPE);
+        double motor2position = getPosition(1, MOTOR_TYPE);
         uint32_t motor1limitlow = getLimitLow(0, MOTOR_TYPE);
         uint32_t motor1limitup  = getLimitUp(0, MOTOR_TYPE);
         uint32_t motor2limitlow = getLimitLow(1, MOTOR_TYPE);

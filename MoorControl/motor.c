@@ -34,10 +34,11 @@
 
 #define PROTOCOL_VERSION                2.0                 //  DONT FORGET TO CHANGE IF NEEDED
 
-#define MOTORS_QUANTITY           3
+#define MOTORS_QUANTITY           4
 #define PRO_FIRST_ID                       1
 #define PRO_SECOND_ID                       2
 #define PRO_THIRD_ID                       3
+#define PRO_FOURTH_ID                       4
 #define MX_DXL_ID                          5                   
 #define BAUDRATE                        1000000
 #define DEVICENAME                      "/dev/ttyUSB0"      // Check which port is being used on your controller
@@ -71,7 +72,7 @@ int dxl_comm_result;
 uint8_t dxl_error = 0;
 uint16_t dxl_present_position = 0;
 
-int MOTORS[MOTORS_QUANTITY] = {PRO_FIRST_ID, PRO_SECOND_ID , PRO_THIRD_ID};
+int MOTORS[MOTORS_QUANTITY] = {PRO_FIRST_ID, PRO_SECOND_ID , PRO_THIRD_ID, PRO_FOURTH_ID};
 
 
 
@@ -218,6 +219,65 @@ uint32_t getProfileVelocity(uint8_t motor_index, uint8_t motor_model)
     return velocity;
 
 }
+
+int getLimitLow(uint8_t motor_index, uint8_t motor_model)
+{
+    if(motor_index == 0)
+    {
+        return PRO_MINIMUN_POSITION_VALUE_FIRST;
+    }
+    else if( motor_index == 1)
+    {
+        return PRO_MINIMUN_POSITION_VALUE_SECOND;
+    }
+}
+int getLimitUp(uint8_t motor_index, uint8_t motor_model)
+{
+    if(motor_index == 0)
+    {
+        return PRO_MAXIMUM_POSITION_VALUE_FIRST;
+    }
+    else if( motor_index == 1)
+    {
+        return PRO_MAXIMUM_POSITION_VALUE_SECOND;
+    }
+}
+
+double getPosition(uint8_t motor_index, uint8_t motor_model )
+{
+    int32_t addres = -1;
+    int resolution = -1;
+    switch(motor_model)
+    {
+        case MOTOR_MX:
+            addres = ADDR_MX_PRESENT_POSITION;
+            resolution = DXL_RESOLUTION;
+            break;
+        case MOTOR_PRO:
+            addres = ADDR_PRO_PRESENT_POSITION;
+            resolution = PRO_RESOLUTION;
+            break;
+        default:
+        printf("NOT A MODEL merror in getPosition\n");
+        return -1;
+    }
+
+    
+    uint32_t position = read4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres);
+
+    if ((dxl_comm_result = getLastTxRxResult(port_num, PROTOCOL_VERSION)) != COMM_SUCCESS)
+    {
+        printTxRxResult(PROTOCOL_VERSION, dxl_comm_result);
+        return -1;
+    }
+    else if ((dxl_error = getLastRxPacketError(port_num, PROTOCOL_VERSION)) != 0)
+    {
+        printRxPacketError(PROTOCOL_VERSION, dxl_error);
+        return -1;
+    }
+    return position * DXL_ANGLE_LIMIT/resolution;
+}
+
 
 void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
 {
