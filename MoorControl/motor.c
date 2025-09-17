@@ -155,9 +155,11 @@ void setProfileVelocity(double velocity, uint8_t motor_index, uint8_t motor_mode
     {
         case MOTOR_MX:
             addres = ADDR_MX_PROFILE_VELOCITY;
+            velocity = velocity/0.229;
             break;
         case MOTOR_PRO:
             addres = ADDR_PRO_PROFILE_VELOCITY;
+            velocity *= 100;
             break;
         default:
             printf("NOT A MODEL\n");
@@ -187,16 +189,19 @@ void setGoalSpeed(double speed, uint8_t motor_index, uint8_t motor_model)
     write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, (uint32_t) speed);
 }
 
-uint32_t getProfileVelocity(uint8_t motor_index, uint8_t motor_model)
+double getProfileVelocity(uint8_t motor_index, uint8_t motor_model)
 {
     int32_t addres = -1;
+    double multiplier = -1;
     switch(motor_model)
     {
         case MOTOR_MX:
             addres = ADDR_MX_PROFILE_VELOCITY;
+            multiplier = 0.029;
             break;
         case MOTOR_PRO:
             addres = ADDR_PRO_PROFILE_VELOCITY;
+            multiplier = 0.01;
             break;
         default:
         printf("NOT A MODEL merror in getProfileVelocity\n");
@@ -216,37 +221,75 @@ uint32_t getProfileVelocity(uint8_t motor_index, uint8_t motor_model)
         printRxPacketError(PROTOCOL_VERSION, dxl_error);
         return -1;
     }
-    return velocity;
+    return velocity * multiplier;
 
 }
 
-int getLimitLow(uint8_t motor_index, uint8_t motor_model)
+double getLimitLow(uint8_t motor_index, uint8_t motor_model)
 {
+    double resolution = -1;
+    switch(motor_model)
+    {
+        case MOTOR_MX:
+            resolution = DXL_RESOLUTION;
+            break;
+        case MOTOR_PRO:
+            resolution = PRO_RESOLUTION;
+            break;
+        default:
+        printf("NOT A MODEL merror in getPosition\n");
+        return -1;
+    }
+
     if(motor_index == 0)
     {
-        return PRO_MINIMUN_POSITION_VALUE_FIRST;
+        return PRO_MINIMUN_POSITION_VALUE_FIRST * DXL_ANGLE_LIMIT/resolution;
     }
     else if( motor_index == 1)
     {
-        return PRO_MINIMUN_POSITION_VALUE_SECOND;
+        return PRO_MINIMUN_POSITION_VALUE_SECOND * DXL_ANGLE_LIMIT/resolution;
+    }
+    else
+    {
+        printf("NOT RIGHT INDEX OF MOTOR");
+        return -1;
     }
 }
-int getLimitUp(uint8_t motor_index, uint8_t motor_model)
+double getLimitUp(uint8_t motor_index, uint8_t motor_model)
 {
+    double resolution = -1;
+    switch(motor_model)
+    {
+        case MOTOR_MX:
+            resolution = DXL_RESOLUTION;
+            break;
+        case MOTOR_PRO:
+            resolution = PRO_RESOLUTION;
+            break;
+        default:
+        printf("NOT A MODEL merror in getPosition\n");
+        return -1;
+    }
+
     if(motor_index == 0)
     {
-        return PRO_MAXIMUM_POSITION_VALUE_FIRST;
+        return PRO_MAXIMUM_POSITION_VALUE_FIRST * DXL_ANGLE_LIMIT/resolution;
     }
     else if( motor_index == 1)
     {
-        return PRO_MAXIMUM_POSITION_VALUE_SECOND;
+        return PRO_MAXIMUM_POSITION_VALUE_SECOND * DXL_ANGLE_LIMIT/resolution;
+    }
+    else
+    {
+        printf("NOT RIGHT INDEX OF MOTOR");
+        return -1;
     }
 }
 
 double getPosition(uint8_t motor_index, uint8_t motor_model )
 {
     int32_t addres = -1;
-    int resolution = -1;
+    double resolution = -1;
     switch(motor_model)
     {
         case MOTOR_MX:
@@ -282,7 +325,7 @@ double getPosition(uint8_t motor_index, uint8_t motor_model )
 void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
 {
     int32_t addres = -1;
-    int resolution = -1;
+    double resolution = -1;
     switch(motor_model)
     {
         case MOTOR_MX:

@@ -128,27 +128,28 @@ int main()
         // snprintf(reply,sizeof(reply),"accepted\nvelocity:%d\n",velosityStored);
         // write(connfd, reply, strlen(reply));
 
-        uint32_t motor1velocity = getProfileVelocity(0, MOTOR_TYPE);
-        uint32_t motor2velocity = getProfileVelocity(1, MOTOR_TYPE);
+        double motor1velocity = getProfileVelocity(0, MOTOR_TYPE);
+        double motor2velocity = getProfileVelocity(1, MOTOR_TYPE);
         double motor1position = getPosition(0, MOTOR_TYPE);
         double motor2position = getPosition(1, MOTOR_TYPE);
-        uint32_t motor1limitlow = getLimitLow(0, MOTOR_TYPE);
-        uint32_t motor1limitup  = getLimitUp(0, MOTOR_TYPE);
-        uint32_t motor2limitlow = getLimitLow(1, MOTOR_TYPE);
-        uint32_t motor2limitup  = getLimitUp(1, MOTOR_TYPE);
+        double motor1limitlow = getLimitLow(0, MOTOR_TYPE);
+        double motor1limitup  = getLimitUp(0, MOTOR_TYPE);
+        double motor2limitlow = getLimitLow(1, MOTOR_TYPE);
+        double motor2limitup  = getLimitUp(1, MOTOR_TYPE);
+        printf("%f, %f, %f, %f", motor1velocity, motor2velocity, motor1position, motor2position);
         
         char reply[512];
         snprintf(reply, sizeof(reply),
             "{"
             "\"status\":\"accepted\","
-            "\"motor1velocity\":%u,"
-            "\"motor2velocity\":%u,"
-            "\"motor1position\":%u,"
-            "\"motor2position\":%u,"
-            "\"motor1limitlow\":%u,"
-            "\"motor1limitup\":%u,"
-            "\"motor2limitlow\":%u,"
-            "\"motor2limitup\":%u"
+            "\"motor1velocity\":%f,"
+            "\"motor2velocity\":%f,"
+            "\"motor1position\":%f,"
+            "\"motor2position\":%f,"
+            "\"motor1limitlow\":%f,"
+            "\"motor1limitup\":%f,"
+            "\"motor2limitlow\":%f,"
+            "\"motor2limitup\":%f"
             "}",
             motor1velocity,
             motor2velocity,
