@@ -12,7 +12,7 @@
 #include "../MoorControl/motor.h"
 
 #define MOTOR_TYPE 1                 // if MX it is 0 if Pro it is 1
-#define ALL_MOTORS 3                 //change it here and MOTORS_QUANTITY in ../MoorController/motor.c
+#define ALL_MOTORS 4                 //change it here and MOTORS_QUANTITY in ../MoorController/motor.c
 
 int connfd, sockfd;
 
@@ -136,7 +136,6 @@ int main()
         double motor1limitup  = getLimitUp(0, MOTOR_TYPE);
         double motor2limitlow = getLimitLow(1, MOTOR_TYPE);
         double motor2limitup  = getLimitUp(1, MOTOR_TYPE);
-        printf("%f, %f, %f, %f", motor1velocity, motor2velocity, motor1position, motor2position);
         
         char reply[512];
         snprintf(reply, sizeof(reply),
@@ -161,6 +160,7 @@ int main()
             motor2limitup
         );
 
+        write(connfd, reply, strlen(reply));
 
         while(1)
         {

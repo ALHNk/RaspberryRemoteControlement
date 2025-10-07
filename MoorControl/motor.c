@@ -186,7 +186,7 @@ void setGoalSpeed(double speed, uint8_t motor_index, uint8_t motor_model)
         return ;
     }
 
-    write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, (uint32_t) speed);
+    write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, (int32_t) speed);
 }
 
 double getProfileVelocity(uint8_t motor_index, uint8_t motor_model)
