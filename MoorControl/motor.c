@@ -342,14 +342,14 @@ void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
     }
 
     int goal_position = (int)(angle * resolution / DXL_ANGLE_LIMIT );
-    if(motor_index == 0 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_FIRST || goal_position < PRO_MINIMUN_POSITION_VALUE_FIRST))
-    {
-        return;
-    }
-    if(motor_index ==1 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_SECOND || goal_position < PRO_MINIMUN_POSITION_VALUE_SECOND))
-    {
-        return;
-    }
+    // if(motor_index == 0 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_FIRST || goal_position < PRO_MINIMUN_POSITION_VALUE_FIRST))
+    // {
+    //     return;
+    // }
+    // if(motor_index ==1 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_SECOND || goal_position < PRO_MINIMUN_POSITION_VALUE_SECOND))
+    // {
+    //     return;
+    // }
 
     write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, goal_position);
 
