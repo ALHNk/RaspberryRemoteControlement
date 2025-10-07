@@ -1,2 +1,5 @@
 .vscode/
 dynamixel_sdk/
+Makefile
+.objects/
+./motor_server
