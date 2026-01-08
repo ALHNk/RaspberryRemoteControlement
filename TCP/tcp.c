@@ -15,6 +15,14 @@
 #define ALL_MOTORS 4                 //change it here and MOTORS_QUANTITY in ../MoorController/motor.c
 
 int connfd, sockfd;
+#define PORT 5050
+#define MAX 100
+// #define TRUE 1
+// #define FALSE 0
+
+typedef enum {false, true} bool;
+
+double speedAngel = 0;
 
 void handle_sigint(int sig)
 {
@@ -29,12 +37,23 @@ void handle_sigint(int sig)
     exit(0);
 
 }
-#define PORT 5050
-#define MAX 100
+
+void generate_secret(char *buf, int length) {
+    const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    int charsetSize = sizeof(charset) - 1;
+    srand(time(NULL));
+    for (int i = 0; i < length; i++) {
+        buf[i] = charset[rand() % charsetSize];
+    }
+    buf[length] = '\0';
+}
+
 int main()
 { 
+    bool isLocked = false;
     signal(SIGINT, handle_sigint);
     openMotorPort();
+    printf("OpenedMotors\n");
     for(int i = 0; i < ALL_MOTORS; i++)
     {
         if(connectMotor(i, MOTOR_TYPE) != 0 )
@@ -162,6 +181,9 @@ int main()
 
         write(connfd, reply, strlen(reply));
 
+        char lockSecret[33];
+        
+
         while(1)
         {
             int n = read(connfd, buffer, sizeof(buffer));
@@ -190,6 +212,25 @@ int main()
 
                 while(*ptr)
                 {
+                    if(strncmp(ptr, "lock:", 5) == 0)
+                    { 
+                        ptr += 5;
+                        if(strtol(ptr, &ptr, 10) == 1)
+                        {
+                            generate_secret(lockSecret, 32);
+                            write(connfd, lockSecret, sizeof(lockSecret));
+                            isLocked = true;
+                            
+                        }
+                        else if(strtol(ptr, &ptr, 10) == 0)
+                        {
+                            ptr += 1;
+                            if(strncmp(ptr, lockSecret, sizeof(lockSecret)))
+                            {
+                                isLocked = false;
+                            }
+                        }
+                    }
                     if(strncmp(ptr, "motor:", 6) == 0)
                     {
                         ptr += 6;
@@ -201,19 +242,41 @@ int main()
                         double  angle = strtod(ptr, &ptr);
                         if(angle > 180) angle -=360;
                         else if(angle < -180) angle +=360;
-                        rotateMotor(angle, motor_id, MOTOR_TYPE);                
+                        if(isLocked == false) rotateMotor(angle, motor_id, MOTOR_TYPE);                
                     }
                     else if(strncmp(ptr, "velocity:", 9) == 0)
                     {
                         ptr += 9;
                         double velocity = strtod(ptr, &ptr);
-                        setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
+                        if(isLocked == false) setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
+                    }
+                    else if(strncmp(ptr, "san:", 4) == 0)
+                    {
+                        ptr += 4;
+                        double san = strtod(ptr, &ptr);
+                        speedAngel = san;
                     }
                     else if(strncmp(ptr, "speed:", 6) == 0)
                     {
                         ptr += 6;
                         double speed = strtod(ptr, &ptr);
-                        setGoalSpeed(speed, motor_id, MOTOR_TYPE);
+                        
+                        if(isLocked == false) 
+                        {
+                            if(speedAngel < 0)
+                            {
+                                setGoalSpeed(speed, motor_id + 1, MOTOR_TYPE);
+                                speed = speed - speed*speedAngel/100;
+                                setGoalSpeed(speed, motor_id, MOTOR_TYPE);
+                            }
+                            else
+                            {
+                                setGoalSpeed(speed, motor_id, MOTOR_TYPE);
+                                speed = speed - speed*speedAngel/100;
+                                setGoalSpeed(speed, motor_id + 1, MOTOR_TYPE);
+                            }
+                            
+                        }
                     }
                     else 
                     {

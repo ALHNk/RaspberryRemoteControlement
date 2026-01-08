@@ -41,7 +41,7 @@
 #define PRO_FOURTH_ID                       4
 #define MX_DXL_ID                          5                   
 #define BAUDRATE                        1000000
-#define DEVICENAME                      "/dev/ttyUSB0"      // Check which port is being used on your controller
+
      
 
 #define TORQUE_ENABLE                   1                   // Value for enabling the torque
@@ -51,10 +51,12 @@
 #define DXL_MOVING_STATUS_THRESHOLD     20                  // Dynamixel moving status threshold
 
 //position limits for pro
-#define PRO_MINIMUN_POSITION_VALUE_FIRST     185000
-#define PRO_MAXIMUM_POSITION_VALUE_FIRST     -300000
+#define PRO_MAXIMUM_POSITION_VALUE_FIRST     185000
+#define PRO_MINIMUN_POSITION_VALUE_FIRST     -300000
 #define PRO_MINIMUN_POSITION_VALUE_SECOND     -300000
 #define PRO_MAXIMUM_POSITION_VALUE_SECOND     185000
+
+#define DEVICENAME "/dev/ttyUSB1"  // Check which port is being used on your controller
 
 
 #define DXL_RESOLUTION 4095
@@ -342,14 +344,14 @@ void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
     }
 
     int goal_position = (int)(angle * resolution / DXL_ANGLE_LIMIT );
-    // if(motor_index == 0 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_FIRST || goal_position < PRO_MINIMUN_POSITION_VALUE_FIRST))
-    // {
-    //     return;
-    // }
-    // if(motor_index ==1 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_SECOND || goal_position < PRO_MINIMUN_POSITION_VALUE_SECOND))
-    // {
-    //     return;
-    // }
+    if(motor_index == 0 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_FIRST || goal_position < PRO_MINIMUN_POSITION_VALUE_FIRST))
+    {
+        return;
+    }
+    if(motor_index ==1 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_SECOND || goal_position < PRO_MINIMUN_POSITION_VALUE_SECOND))
+    {
+        return;
+    }
 
     write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, goal_position);
 
