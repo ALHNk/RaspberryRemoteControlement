@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <time.h>
 
 #include "../MoorControl/motor.h"
 
@@ -217,18 +218,23 @@ int main()
                         ptr += 5;
                         if(strtol(ptr, &ptr, 10) == 1)
                         {
-                            generate_secret(lockSecret, 32);
-                            write(connfd, lockSecret, sizeof(lockSecret));
+                            // generate_secret(lockSecret, 32);
+                            // write(connfd, lockSecret, sizeof(lockSecret));
+                            for (int i = 0; i < ALL_MOTORS; i++)
+                            {
+                                setGoalSpeed(0, i, MOTOR_TYPE);
+                            }
                             isLocked = true;
                             
                         }
                         else if(strtol(ptr, &ptr, 10) == 0)
                         {
-                            ptr += 1;
-                            if(strncmp(ptr, lockSecret, sizeof(lockSecret)))
-                            {
-                                isLocked = false;
-                            }
+                            // ptr += 1;
+                            // if(strncmp(ptr, lockSecret, sizeof(lockSecret)))
+                            // {
+                            //     isLocked = false;
+                            // }
+                            isLocked = false;
                         }
                     }
                     if(strncmp(ptr, "motor:", 6) == 0)
@@ -265,13 +271,13 @@ int main()
                         {
                             if(speedAngel < 0)
                             {
-                                setGoalSpeed(speed, motor_id + 1, MOTOR_TYPE);
+                                setGoalSpeed(-speed, motor_id + 1, MOTOR_TYPE);
                                 speed = speed - speed*speedAngel/100;
                                 setGoalSpeed(speed, motor_id, MOTOR_TYPE);
                             }
                             else
                             {
-                                setGoalSpeed(speed, motor_id, MOTOR_TYPE);
+                                setGoalSpeed(-speed, motor_id, MOTOR_TYPE);
                                 speed = speed - speed*speedAngel/100;
                                 setGoalSpeed(speed, motor_id + 1, MOTOR_TYPE);
                             }

@@ -4,7 +4,7 @@
 
 TARGET      = motor_server
 
-DIR_DXL    = /home/suharik/Dependencies/DynamixelSDK/c
+DIR_DXL    = /home/robotics/DynamixelSDK/c
 DIR_OBJS   = .objects
 
 CC          = gcc
@@ -15,7 +15,7 @@ LNKCC       = $(CX)
 LNKFLAGS    = $(CXFLAGS)
 
 INCLUDES   += -I$(DIR_DXL)/include -I./MoorControl
-LIBRARIES  += -L$(DIR_DXL)/build/linux64 -ldxl_x64_c -lpthread -lrt
+LIBRARIES  += -L$(DIR_DXL)/build/linux_sbc -ldxl_sbc_c -lpthread -lrt
 
 # файлы
 SOURCES = TCP/tcp.c MoorControl/motor.c
@@ -38,3 +38,6 @@ $(DIR_OBJS)/%.o: TCP/%.c
 
 $(DIR_OBJS)/%.o: MoorControl/%.c
 	$(CC) $(CCFLAGS) -c $< -o $@
+
+#echo "/home/robotics/DynamixelSDK/c/build/linux_sbc" | sudo tee /etc/ld.so.conf.d/dynamixel.conf
+# sudo ldconfig
