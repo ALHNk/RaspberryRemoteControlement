@@ -24,6 +24,7 @@ int connfd, sockfd;
 typedef enum {false, true} bool;
 
 double speedAngel = 0;
+double globalSpeed = 0;
 
 void handle_sigint(int sig)
 {
@@ -47,6 +48,22 @@ void generate_secret(char *buf, int length) {
         buf[i] = charset[rand() % charsetSize];
     }
     buf[length] = '\0';
+}
+
+void change_speed(double speed, int*motor_id)
+{
+    if(speedAngel < 0)
+        {
+            setGoalSpeed(-speed, motor_id + 1, MOTOR_TYPE);
+            speed = speed - speed*speedAngel/100;
+            setGoalSpeed(speed, motor_id, MOTOR_TYPE);
+        }
+        else
+        {
+            setGoalSpeed(-speed, motor_id, MOTOR_TYPE);
+            speed = speed - speed*speedAngel/100;
+            setGoalSpeed(speed, motor_id + 1, MOTOR_TYPE);
+        }
 }
 
 int main()
@@ -261,6 +278,7 @@ int main()
                         ptr += 4;
                         double san = strtod(ptr, &ptr);
                         speedAngel = san;
+                        change_speed(globalSpeed, &motor_id);      
                     }
                     else if(strncmp(ptr, "speed:", 6) == 0)
                     {
@@ -269,19 +287,8 @@ int main()
                         
                         if(isLocked == false) 
                         {
-                            if(speedAngel < 0)
-                            {
-                                setGoalSpeed(-speed, motor_id + 1, MOTOR_TYPE);
-                                speed = speed - speed*speedAngel/100;
-                                setGoalSpeed(speed, motor_id, MOTOR_TYPE);
-                            }
-                            else
-                            {
-                                setGoalSpeed(-speed, motor_id, MOTOR_TYPE);
-                                speed = speed - speed*speedAngel/100;
-                                setGoalSpeed(speed, motor_id + 1, MOTOR_TYPE);
-                            }
-                            
+                            globalSpeed = speed;
+                            change_speed(globalSpeed, &motor_id);                        
                         }
                     }
                     else 
