@@ -50,7 +50,7 @@ void generate_secret(char *buf, int length) {
     buf[length] = '\0';
 }
 
-void change_speed(double speed, int*motor_id)
+void change_speed(double speed, int motor_id)
 {
     if(speedAngel < 0)
         {
@@ -278,7 +278,7 @@ int main()
                         ptr += 4;
                         double san = strtod(ptr, &ptr);
                         speedAngel = san;
-                        change_speed(globalSpeed, &motor_id);      
+                        change_speed(globalSpeed, motor_id);      
                     }
                     else if(strncmp(ptr, "speed:", 6) == 0)
                     {
@@ -288,7 +288,7 @@ int main()
                         if(isLocked == false) 
                         {
                             globalSpeed = speed;
-                            change_speed(globalSpeed, &motor_id);                        
+                            change_speed(globalSpeed, motor_id);                        
                         }
                     }
                     else 
