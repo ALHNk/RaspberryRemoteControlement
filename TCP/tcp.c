@@ -27,7 +27,7 @@ double speedAngel = 0;
 double globalSpeed = 0;
 
 bool torquedoff = 1;
-
+disconnect_all_motors();
 void handle_sigint(int sig)
 {
     printf("Exitting \n");
