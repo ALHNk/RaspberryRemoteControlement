@@ -66,12 +66,8 @@ void change_speed(double speed, int motor_id)
         }
 }
 
-int main()
-{ 
-    bool isLocked = false;
-    signal(SIGINT, handle_sigint);
-    openMotorPort();
-    printf("OpenedMotors\n");
+int connect_to_all_motors()
+{
     for(int i = 0; i < ALL_MOTORS; i++)
     {
         if(connectMotor(i, MOTOR_TYPE) != 0 )
@@ -79,8 +75,25 @@ int main()
             return 1;
         }
     }
+    return 0;
+}
 
-    
+int disconnect_all_motors()
+{
+    for (int i = 0; i < ALL_MOTORS; i++)
+    {
+         disconnectMotor(i, MOTOR_TYPE);
+    }
+    return 0;
+}
+
+int main()
+{ 
+    bool isLocked = false;
+    signal(SIGINT, handle_sigint);
+    openMotorPort();
+    printf("OpenedMotors\n");
+        
     
     const char *SECRET = getenv("MOTOR_SECRET");
     if(!SECRET)
@@ -291,6 +304,19 @@ int main()
                             change_speed(globalSpeed, motor_id);                        
                         }
                     }
+                    else if(strncmp(ptr, "torque:",8) == 0)
+                    {
+                        ptr += 8;
+                        bool torq_status = strtod(ptr, &ptr);
+                        if( torq_status == 1)
+                        {
+                            connect_to_all_motors();
+                        }
+                        else
+                        {
+                            disconnect_all_motors();    
+                        }
+                    }
                     else 
                     {
                         ptr++;
@@ -307,10 +333,8 @@ int main()
 
     
     close(sockfd);
-    for (int i = 0; i < ALL_MOTORS; i++){
-         disconnectMotor(i, MOTOR_TYPE);
+    disconnect_all_motors();
 
-    }
     closeMotorPort();
     return 0;
 }
