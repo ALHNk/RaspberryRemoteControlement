@@ -344,6 +344,7 @@ int main()
         }
         printf("Closing client \n");
         close(connfd);
+        disconnect_all_motors();
     }
 
     
