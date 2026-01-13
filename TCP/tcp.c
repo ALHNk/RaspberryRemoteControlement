@@ -313,23 +313,35 @@ int main()
                             change_speed(globalSpeed, motor_id);                        
                         }
                     }
-                    else if(strncmp(ptr, "torque:",8) == 0)
+                    else if (strncmp(ptr, "torque:", 8) == 0)
                     {
                         ptr += 8;
-                        bool torq_status = strtod(ptr, &ptr);
-                        if( torq_status == 1)
-                        {
-                            if(connect_to_all_motors() == 0)
-                            {
-                                printf("Torqued on \n");
-                                write(connfd, "on\n", 4);
-                            }                       
+
+                        char *end;
+                        long torque = strtol(ptr, &end, 10);
+
+                        if (end == ptr) {
+                            printf("Invalid torque value\n");
+                            return;
                         }
-                        else
+
+                        if (torque == 1)
                         {
-                            disconnect_all_motors();   
+                            if (connect_to_all_motors() == 0)
+                            {
+                                printf("Torqued on\n");
+                                write(connfd, "on\n", strlen("on\n"));
+                            }
+                        }
+                        else if(torque == 0)
+                        {
+                            disconnect_all_motors();
                             printf("Torqued off\n");
-                            write(connfd, "off\n", 5);
+                            write(connfd, "off\n", strlen("off\n"));
+                        }
+                        else 
+                        {
+                            printf("Invalid torque\n");
                         }
                     }
                     else 
