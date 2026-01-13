@@ -27,7 +27,7 @@ double speedAngel = 0;
 double globalSpeed = 0;
 
 bool torquedoff = 1;
-disconnect_all_motors();
+int disconnect_all_motors();
 void handle_sigint(int sig)
 {
     printf("Exitting \n");
@@ -319,11 +319,17 @@ int main()
                         bool torq_status = strtod(ptr, &ptr);
                         if( torq_status == 1)
                         {
-                            connect_to_all_motors();
+                            if(connect_to_all_motors() == 0)
+                            {
+                                printf("Torqued on \n");
+                                write(connfd, "on\n", 4);
+                            }                       
                         }
                         else
                         {
-                            disconnect_all_motors();    
+                            disconnect_all_motors();   
+                            printf("Torqued off\n");
+                            write(connfd, "off\n", 5);
                         }
                     }
                     else 
