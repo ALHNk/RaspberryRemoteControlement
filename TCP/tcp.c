@@ -26,13 +26,12 @@ typedef enum {false, true} bool;
 double speedAngel = 0;
 double globalSpeed = 0;
 
+bool torquedoff = 1;
+
 void handle_sigint(int sig)
 {
     printf("Exitting \n");
-    for(int i = 0; i < ALL_MOTORS; i++)
-    {
-        disconnectMotor(i, MOTOR_TYPE);
-    }
+    disconnect_all_motors();    
     close(connfd);
     close(sockfd);
     closeMotorPort();
@@ -68,21 +67,31 @@ void change_speed(double speed, int motor_id)
 
 int connect_to_all_motors()
 {
+    if(torquedoff == 0)
+    {
+        return 0;
+    }
     for(int i = 0; i < ALL_MOTORS; i++)
     {
         if(connectMotor(i, MOTOR_TYPE) != 0 )
         {
             return 1;
         }
+        torquedoff = 0;
     }
     return 0;
 }
 
 int disconnect_all_motors()
 {
+    if(torquedoff == 1)
+    {
+        return 0;
+    }
     for (int i = 0; i < ALL_MOTORS; i++)
     {
-         disconnectMotor(i, MOTOR_TYPE);
+        disconnectMotor(i, MOTOR_TYPE);
+        torquedoff = 1;
     }
     return 0;
 }
