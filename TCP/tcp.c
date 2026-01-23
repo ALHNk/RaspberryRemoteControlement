@@ -102,6 +102,11 @@ int main()
     signal(SIGINT, handle_sigint);
     openMotorPort();
     printf("OpenedMotors\n");
+
+    // connect_to_all_motors();
+    // rotateMotor(-177.77, 0, MOTOR_TYPE);
+    // rotateMotor(178.53, 1, MOTOR_TYPE);
+    // disconnect_all_motors();
         
     
     const char *SECRET = getenv("MOTOR_SECRET");
@@ -313,17 +318,18 @@ int main()
                             change_speed(globalSpeed, motor_id);                        
                         }
                     }
-                    else if (strncmp(ptr, "torque:", 8) == 0)
+                    else if (strncmp(ptr, "torque:", 7) == 0)
                     {
-                        ptr += 8;
+                        ptr += 7;
 
-                        char *end;
-                        long torque = strtol(ptr, &end, 10);
+			            printf("torque started\n");
+                        //char *end;
+                        long torque = strtol(ptr, &ptr, 10);
 
-                        if (end == ptr) {
-                            printf("Invalid torque value\n");
-                            return;
-                        }
+                        //if (end == ptr) {
+                          //  printf("Invalid torque value\n");
+                            //return 1;
+                        //}
 
                         if (torque == 1)
                         {
@@ -343,6 +349,24 @@ int main()
                         {
                             printf("Invalid torque\n");
                         }
+                    }
+                    else if(strncmp(ptr, "prot:", 5) == 0)
+                    {
+                        ptr += 5;
+                        double prot = strtod(ptr, &ptr);
+                        prot = prot /45.0;
+                        float local_speed = prot * 5.0;
+                        setGoalSpeed(local_speed, motor_id, MOTOR_TYPE);
+                        setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
+                    }
+                    else if(strncmp(ptr, "twodegree:", 10) == 0)
+                    {
+                        ptr += 10;
+                        double td = strtod(ptr, &ptr);
+                        double angle1 = td * 288.16 - 109.62;
+                        double angle2 = td * (-287.41) + 177.78;
+                        rotateMotor(angle1, motor_id, MOTOR_TYPE);
+                        rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     }
                     else 
                     {
