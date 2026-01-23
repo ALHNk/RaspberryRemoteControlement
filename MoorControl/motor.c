@@ -188,6 +188,10 @@ void setGoalSpeed(double speed, uint8_t motor_index, uint8_t motor_model)
         return ;
     }
 
+    if(motor_index == 0 || motor_index == 1) 
+    {
+        return;
+    }
     write4ByteTxRx(port_num, PROTOCOL_VERSION, MOTORS[motor_index], addres, (int32_t) speed);
 }
 
