@@ -298,7 +298,7 @@ int main()
                     {
                         ptr += 9;
                         double velocity = strtod(ptr, &ptr);
-                        if(isLocked == false) setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
+                        setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
                     }
                     else if(strncmp(ptr, "san:", 4) == 0)
                     {
@@ -365,6 +365,7 @@ int main()
                         double td = strtod(ptr, &ptr);
                         double angle1 = td * 288.16 - 109.62;
                         double angle2 = td * (-287.41) + 177.78;
+			printf("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     }

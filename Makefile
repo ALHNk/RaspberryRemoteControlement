@@ -4,7 +4,7 @@
 
 TARGET      = motor_server
 
-DIR_DXL    = /home/robotics/DynamixelSDK/c
+DIR_DXL    = /home/robotics/Dependencies/DynamixelSDK/c
 DIR_OBJS   = .objects
 
 CC          = gcc
