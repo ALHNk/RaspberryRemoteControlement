@@ -53,8 +53,8 @@
 //position limits for pro
 #define PRO_MAXIMUM_POSITION_VALUE_FIRST     185000
 #define PRO_MINIMUN_POSITION_VALUE_FIRST     -300000
-#define PRO_MINIMUN_POSITION_VALUE_SECOND     -184976
-#define PRO_MAXIMUM_POSITION_VALUE_SECOND     301282
+#define PRO_MINIMUN_POSITION_VALUE_SECOND     -185000
+#define PRO_MAXIMUM_POSITION_VALUE_SECOND     300000
 
 #define DEVICENAME "/dev/ttyUSB0"  // Check which port is being used on your controller
 

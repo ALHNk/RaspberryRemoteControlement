@@ -27,6 +27,7 @@ double speedAngel = 0;
 double globalSpeed = 0;
 
 bool torquedoff = 1;
+bool isSan = 0;
 int disconnect_all_motors();
 void handle_sigint(int sig)
 {
@@ -51,13 +52,17 @@ void generate_secret(char *buf, int length) {
 
 void change_speed(double speed, int motor_id)
 {
+    if(isSan == 0)
+    {
+        return;
+    }
     if(speedAngel < 0)
         {
             setGoalSpeed(-speed, motor_id + 1, MOTOR_TYPE);
             speed = speed - speed*speedAngel/100;
             setGoalSpeed(speed, motor_id, MOTOR_TYPE);
         }
-        else
+    else
         {
             setGoalSpeed(-speed, motor_id, MOTOR_TYPE);
             speed = speed - speed*speedAngel/100;
@@ -310,6 +315,7 @@ int main()
                     else if(strncmp(ptr, "speed:", 6) == 0)
                     {
                         ptr += 6;
+                        isSan = 1;
                         double speed = strtod(ptr, &ptr);
                         
                         if(isLocked == false) 
@@ -353,19 +359,20 @@ int main()
                     else if(strncmp(ptr, "prot:", 5) == 0)
                     {
                         ptr += 5;
+                        isSan = 0;
                         double prot = strtod(ptr, &ptr);
                         prot = prot /45.0;
                         float local_speed = prot * 5.0;
                         setGoalSpeed(local_speed, motor_id, MOTOR_TYPE);
-                        setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
+                        setGoalSpeed(local_speed, motor_id+1, MOTOR_TYPE);
                     }
                     else if(strncmp(ptr, "twodegree:", 10) == 0)
                     {
                         ptr += 10;
                         double td = strtod(ptr, &ptr);
-                        double angle1 = td * 288.16 - 109.62;
-                        double angle2 = td * (-287.41) + 177.78;
-			printf("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+                        double angle1 = td * 287.41  - 177.78;
+                        double angle2 = td * (-287.41) - 109.63;
+			            printf("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     }
