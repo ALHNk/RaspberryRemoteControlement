@@ -361,8 +361,8 @@ int main()
                         ptr += 5;
                         isSan = 0;
                         double prot = strtod(ptr, &ptr);
-                        prot = prot /45.0;
-                        float local_speed = prot * 5.0;
+                        prot = prot /45.0f;
+                        float local_speed = prot * 5.0f;
                         setGoalSpeed(local_speed, motor_id, MOTOR_TYPE);
                         setGoalSpeed(local_speed, motor_id+1, MOTOR_TYPE);
                     }
