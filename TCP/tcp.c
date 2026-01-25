@@ -67,10 +67,10 @@ void change_speed(double speed, int motor_id)
 
 int connect_to_all_motors()
 {
-    if(torquedoff == 0)
-    {
-        return 0;
-    }
+    //if(torquedoff == 0)
+    //{
+     //   return 0;
+   // }
     for(int i = 0; i < ALL_MOTORS; i++)
     {
         if(connectMotor(i, MOTOR_TYPE) != 0 )
@@ -84,10 +84,10 @@ int connect_to_all_motors()
 
 int disconnect_all_motors()
 {
-    if(torquedoff == 1)
-    {
-        return 0;
-    }
+    //if(torquedoff == 1)
+    //{
+      //  return 0;
+    //}
     for (int i = 0; i < ALL_MOTORS; i++)
     {
         disconnectMotor(i, MOTOR_TYPE);
