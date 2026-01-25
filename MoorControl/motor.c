@@ -350,10 +350,12 @@ void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
     int goal_position = (int)(angle * resolution / DXL_ANGLE_LIMIT );
     if(motor_index == 0 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_FIRST || goal_position < PRO_MINIMUN_POSITION_VALUE_FIRST))
     {
+        printf("Out of limit");
         return;
     }
     if(motor_index ==1 && (goal_position > PRO_MAXIMUM_POSITION_VALUE_SECOND || goal_position < PRO_MINIMUN_POSITION_VALUE_SECOND))
     {
+        printf("Out of limit");
         return;
     }
 
