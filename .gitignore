@@ -3,3 +3,4 @@ dynamixel_sdk/
 Makefile
 .objects/
 ./motor_server
+motor_server
