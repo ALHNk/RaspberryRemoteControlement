@@ -17,16 +17,32 @@ void log_msg(const char *fmt, ...)
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
 
-    fprintf(logf, "[%02d:%02d:%02d] ",
-            tm->tm_hour, tm->tm_min, tm->tm_sec);
+    char timebuf[16];
+    snprintf(timebuf, sizeof(timebuf),
+             "%02d:%02d:%02d",
+             tm->tm_hour, tm->tm_min, tm->tm_sec);
 
     va_list args;
     va_start(args, fmt);
-    vfprintf(logf, fmt, args);
-    va_end(args);
+
+    // --- В ФАЙЛ ---
+    fprintf(logf, "[%s] ", timebuf);
+
+    va_list args_file;
+    va_copy(args_file, args);
+    vfprintf(logf, fmt, args_file);
+    va_end(args_file);
 
     fprintf(logf, "\n");
     fflush(logf);
+
+    // --- В ТЕРМИНАЛ ---
+    fprintf(stdout, "[%s] ", timebuf);
+    vfprintf(stdout, fmt, args);
+    fprintf(stdout, "\n");
+    fflush(stdout);
+
+    va_end(args);
 }
 
 void log_close()
