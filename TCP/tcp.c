@@ -11,6 +11,7 @@
 #include <time.h>
 
 #include "../MoorControl/motor.h"
+#include "logger.h"
 
 #define MOTOR_TYPE 1                 // if MX it is 0 if Pro it is 1
 #define ALL_MOTORS 4                 //change it here and MOTORS_QUANTITY in ../MoorController/motor.c
@@ -31,11 +32,12 @@ bool isSan = 0;
 int disconnect_all_motors();
 void handle_sigint(int sig)
 {
-    printf("Exitting \n");
+    log_msg("Exitting");
     disconnect_all_motors();    
     close(connfd);
     close(sockfd);
     closeMotorPort();
+    log_close();
     exit(0);
 
 }
@@ -52,23 +54,19 @@ void generate_secret(char *buf, int length) {
 
 void change_speed(double speed, int motor_id)
 {
-    if(isSan == 0)
-    {
-        return;
-    }
-    if(speedAngel < 0)
-        {
-            setGoalSpeed(-speed, motor_id + 1, MOTOR_TYPE);
-            speed = speed - speed*speedAngel/100;
-            setGoalSpeed(speed, motor_id, MOTOR_TYPE);
-        }
-    else
-        {
-            setGoalSpeed(-speed, motor_id, MOTOR_TYPE);
-            speed = speed - speed*speedAngel/100;
-            setGoalSpeed(speed, motor_id + 1, MOTOR_TYPE);
-        }
+    if (!isSan) return;
+
+    double k = speedAngel / 100.0;
+    if (k > 1) k = 1;
+    if (k < -1) k = -1;
+
+    double left  = speed * (1 - k);
+    double right = speed * (1 + k);
+
+    setGoalSpeed(left,  motor_id,     MOTOR_TYPE);
+    setGoalSpeed(right, motor_id + 1, MOTOR_TYPE);
 }
+
 
 int connect_to_all_motors()
 {
@@ -105,8 +103,11 @@ int main()
 { 
     bool isLocked = false;
     signal(SIGINT, handle_sigint);
+
+    log_init("server.log");
+
     openMotorPort();
-    printf("OpenedMotors\n");
+    log_msg("OpenedMotors");
 
     // connect_to_all_motors();
     // rotateMotor(-177.77, 0, MOTOR_TYPE);
@@ -117,7 +118,8 @@ int main()
     const char *SECRET = getenv("MOTOR_SECRET");
     if(!SECRET)
     {
-        fprintf(stderr, "Secret is not set\n");
+        log_msg("Secret is not set");
+        log_close();
         exit(1);
     }
     char buffer[MAX];
@@ -150,7 +152,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    printf("TCP server started at port: %d \n", PORT);
+    log_msg("TCP server started at port: %d", PORT);
 
     if((listen(sockfd,5)) != 0)
     {
@@ -158,9 +160,10 @@ int main()
         exit(EXIT_FAILURE);
     }
     else {
-        printf("Server started listenning \n");
+        log_msg("Server started listening");
     }
     len = sizeof(cliaddr);
+
     while(1)
     {
         connfd = accept(sockfd, (struct sockaddr*)&cliaddr, &len);
@@ -170,7 +173,7 @@ int main()
             continue;
         }
         else{
-            printf("Connected\n");
+            log_msg("Connected");
             // write(connfd, "connected\n", 11);
         }
         int n = read(connfd, buffer, sizeof(buffer));
@@ -185,13 +188,13 @@ int main()
 
         if(strcmp(buffer, SECRET) != 0)
         {
-            printf("Wrong Secret\n%s\n", buffer);
+            log_msg("Wrong Secret: %s", buffer);
             write(connfd, "unauthorized\n", 13);
             close(connfd);
             continue;
         }
 
-        printf("Client accepted\n");
+        log_msg("Client accepted");
         // uint32_t velosityStored = getProfileVelocity(0, MOTOR_TYPE);              // DO NOT FORGET ABPOUT THIS LINE IN THE FUTURE
         // char reply[50];
         // snprintf(reply,sizeof(reply),"accepted\nvelocity:%d\n",velosityStored);
@@ -239,7 +242,7 @@ int main()
             int n = read(connfd, buffer, sizeof(buffer));
             if(n == 0 )
             {
-                printf("Client Disconnected ! \n");
+                log_msg("Client Disconnected");
                 break;
             }
             else if(n < 0 )
@@ -250,7 +253,7 @@ int main()
 
             if(strcmp(buffer, "EXIT") == 0)
             {
-                printf("EXITING \n");
+                log_msg("EXITING");
                 break;
             }
 
@@ -328,7 +331,7 @@ int main()
                     {
                         ptr += 7;
 
-			            printf("torque started\n");
+                        log_msg("torque started");
                         //char *end;
                         long torque = strtol(ptr, &ptr, 10);
 
@@ -341,19 +344,19 @@ int main()
                         {
                             if (connect_to_all_motors() == 0)
                             {
-                                printf("Torqued on\n");
+                                log_msg("Torqued on");
                                 write(connfd, "on\n", strlen("on\n"));
                             }
                         }
                         else if(torque == 0)
                         {
                             disconnect_all_motors();
-                            printf("Torqued off\n");
+                            log_msg("Torqued off");
                             write(connfd, "off\n", strlen("off\n"));
                         }
                         else 
                         {
-                            printf("Invalid torque\n");
+                            log_msg("Invalid torque");
                         }
                     }
                     else if(strncmp(ptr, "prot:", 5) == 0)
@@ -372,7 +375,7 @@ int main()
                         double td = strtod(ptr, &ptr);
                         double angle1 = -177.78 + td * 287.41;
                         double angle2 =  177.78 - td * 287.41;
-			            printf("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+			            log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     }
@@ -381,12 +384,12 @@ int main()
                         ptr++;
                     }
                 }
-                printf("came message %s \n", line);
+                log_msg("came message %s", line);
                 line = strtok(NULL, "\n");
             }            
             memset(buffer, 0, MAX);
         }
-        printf("Closing client \n");
+        log_msg("Closing client");
         close(connfd);
         disconnect_all_motors();
     }
