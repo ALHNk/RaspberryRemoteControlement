@@ -383,6 +383,9 @@ int main()
                     {
                         ptr++;
                     }
+
+                    double v1 = getGoalSpeed(2, MOTOR_TYPE);
+                    double v2 = getGoalSpeed(3, MOTOR_TYPE);
                 }
                 log_msg("came message %s", line);
                 line = strtok(NULL, "\n");

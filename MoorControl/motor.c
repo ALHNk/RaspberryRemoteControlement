@@ -388,6 +388,59 @@ void rotateMotor(double angle, uint8_t motor_index, uint8_t motor_model)
     // } while (abs(goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD);
 
 }
+
+double getGoalSpeed(uint8_t motor_index, uint8_t motor_model)
+{
+    int32_t address = -1;
+    double multiplier = 1.0;
+
+    switch (motor_model)
+    {
+        case MOTOR_MX:
+            address = ADDR_MX_GOAL_VELOCITY;
+            multiplier = 0.229;   // MX: raw → rpm
+            break;
+
+        case MOTOR_PRO:
+            address = ADDR_PRO_GOAL_VELOCITY;
+            multiplier = 0.01;    // PRO: raw → rpm
+            break;
+
+        default:
+            log_msg("getGoalSpeed: invalid motor model %d", motor_model);
+            return -1;
+    }
+
+    int32_t raw_speed = read4ByteTxRx(
+        port_num,
+        PROTOCOL_VERSION,
+        MOTORS[motor_index],
+        address
+    );
+
+    if ((dxl_comm_result = getLastTxRxResult(port_num, PROTOCOL_VERSION)) != COMM_SUCCESS)
+    {
+        log_msg("getGoalSpeed: TXRX error motor=%d result=%d",
+                motor_index, dxl_comm_result);
+        return -1;
+    }
+
+    if ((dxl_error = getLastRxPacketError(port_num, PROTOCOL_VERSION)) != 0)
+    {
+        log_msg("getGoalSpeed: packet error motor=%d error=%d",
+                motor_index, dxl_error);
+        return -1;
+    }
+
+    double speed = raw_speed * multiplier;
+
+    log_msg("Motor %d goal speed = %.2f rpm (raw=%d)",
+            motor_index, speed, raw_speed);
+
+    return speed;
+}
+
+
 int disconnectMotor(uint8_t motor_index, uint8_t motor_model)
 {
     int32_t addres = -1;
