@@ -10,7 +10,7 @@ int disconnectMotor(uint8_t motor_index, uint8_t motor_model);
 void setProfileVelocity(double velcoity,uint8_t motor_index, uint8_t motor_model);
 void setGoalSpeed(double speed, uint8_t motor_index, uint8_t motor_model);
 double getProfileVelocity(uint8_t motor_index, uint8_t motor_model);
-double getGoalSpeed(uint8_t motor_index, uint8_t motor_model)
+double getGoalSpeed(uint8_t motor_index, uint8_t motor_model);
 void closeMotorPort();                                                                                                                                                                                                                                  
 double getLimitLow(uint8_t motor_index, uint8_t motor_model);
 double getLimitUp(uint8_t motor_index, uint8_t motor_model);
