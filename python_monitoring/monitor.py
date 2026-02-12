@@ -14,10 +14,11 @@ import argparse
 import sys
 
 class MotorSpeedMonitor:
-    def __init__(self, host='localhost', port=5051, max_points=100):
+    def __init__(self, host='10.35.97.217', port=5051, max_points=100):
         self.host = host
         self.port = port
         self.max_points = max_points
+        self.buffer = ""
         
         # Data storage
         self.timestamps = deque(maxlen=max_points)
@@ -72,31 +73,36 @@ class MotorSpeedMonitor:
         print("Disconnected from server")
     
     def read_data(self):
-        """Read one line of JSON data from server"""
         if not self.connected:
             return None
-        
+
         try:
-            # Read until newline
-            data = b''
-            while True:
-                chunk = self.sock.recv(1)
-                if not chunk:
-                    self.connected = False
-                    return None
-                data += chunk
-                if chunk == b'\n':
-                    break
-            
-            # Parse JSON
-            json_data = json.loads(data.decode('utf-8').strip())
-            return json_data
+            chunk = self.sock.recv(4096).decode()
+
+            if not chunk:
+                self.connected = False
+                return None
+
+            self.buffer += chunk
+
+            if "\n" not in self.buffer:
+                return None
+
+            line, self.buffer = self.buffer.split("\n", 1)
+
+            if not line.strip():
+                return None
+
+            return json.loads(line)
+
         except socket.timeout:
             return None
         except Exception as e:
-            print(f"Error reading data: {e}")
+            print("Read error:", e)
             self.connected = False
             return None
+
+
     
     def update_plot(self, frame):
         """Animation update function"""
@@ -115,10 +121,10 @@ class MotorSpeedMonitor:
         try:
             timestamp = len(self.timestamps) * 0.1  # 10 Hz = 0.1s per sample
             self.timestamps.append(timestamp)
-            self.motor0_speeds.append(data['motor0'])
-            self.motor1_speeds.append(data['motor1'])
             self.motor2_speeds.append(data['motor2'])
             self.motor3_speeds.append(data['motor3'])
+            self.motor0_speeds.append(0)
+            self.motor1_speeds.append(0)
             
             # Update all plots
             speeds = [self.motor0_speeds, self.motor1_speeds, 
