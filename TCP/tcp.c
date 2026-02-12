@@ -443,7 +443,7 @@ void* send_speed_threat(void* arg)
 
     log_msg("SEND SPEED started listening");
 
-    while(atomic_load(&is_running) == 1)
+    while(1)
     {
         len = sizeof(cliaddr);  
         int send_speed_client_fd = accept(send_speed_fd, (struct sockaddr*)&cliaddr, &len);  
@@ -462,9 +462,9 @@ void* send_speed_threat(void* arg)
 
             char buffer[256];
             // FIX 2: Add the actual values to snprintf
-            snprintf(buffer, sizeof(buffer), 
-                    "{\"motor2\":%.3f,\"motor3\":%.3f,\"timestamp\":%ld}\n",
-                    goal_speed_1, goal_speed_2, time(NULL));
+            //snprintf(buffer, sizeof(buffer), 
+              //      "{\"motor2\":%.3f,\"motor3\":%.3f,\"timestamp\":%ld}\n",
+                //    goal_speed_1, goal_speed_2, time(NULL));
 
             ssize_t sent = write(send_speed_client_fd, buffer, strlen(buffer));
             if(sent <= 0) {
