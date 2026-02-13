@@ -294,6 +294,10 @@ void* control_threat(void* arg)
                             isLocked = false;
                         }
                     }
+                    if(strncmp(ptr, "ESTOP", 5) == 0)
+                    {
+                        emergancy_stop();
+                    }
                     if(strncmp(ptr, "motor:", 6) == 0)
                     {
                         ptr += 6;
