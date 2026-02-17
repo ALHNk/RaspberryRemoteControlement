@@ -522,17 +522,17 @@ int main()
         log_close();
         exit(1);
     }
-    if(pthread_create(&speed_send_td, NULL, send_speed_threat, NULL) != 0)
-    {
-        perror("Creating a send speed thread failed");
-        log_close();
-        exit(1);
-    }
+    //if(pthread_create(&speed_send_td, NULL, send_speed_threat, NULL) != 0)
+    //{
+    //    perror("Creating a send speed thread failed");
+    //    log_close();
+    //    exit(1);
+    //}
 
     log_msg("Both threads are created");
 
     pthread_join(control_td, NULL);
-    pthread_join(speed_send_td, NULL);  
+   // pthread_join(speed_send_td, NULL);  
 
     disconnect_all_motors();
 
