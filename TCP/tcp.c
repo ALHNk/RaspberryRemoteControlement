@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <time.h>
+#include <stdatomic.h>
+#include <pthread.h>
+
 
 #include "../MoorControl/motor.h"
 #include "logger.h"
@@ -18,6 +21,7 @@
 
 int connfd, sockfd;
 #define PORT 5050
+#define SPEED_SEND_PORT 5051
 #define MAX 100
 // #define TRUE 1
 // #define FALSE 0
@@ -29,6 +33,10 @@ double globalSpeed = 0;
 
 bool torquedoff = 1;
 bool isSan = 0;
+
+atomic_bool is_running = ATOMIC_VAR_INIT(0);
+
+
 int disconnect_all_motors();
 void handle_sigint(int sig)
 {
@@ -40,6 +48,16 @@ void handle_sigint(int sig)
     log_close();
     exit(0);
 
+}
+
+void emergancy_stop()
+{
+    setGoalSpeed(0, 2, MOTOR_TYPE);
+    setGoalSpeed(0, 3, MOTOR_TYPE);
+    disconnect_all_motors();
+    closeMotorPort();
+    printf("Emergency Stop");
+    exit(1);
 }
 
 void generate_secret(char *buf, int length) {
@@ -99,22 +117,9 @@ int disconnect_all_motors()
     return 0;
 }
 
-int main()
-{ 
+void* control_threat(void* arg)
+{
     bool isLocked = false;
-    signal(SIGINT, handle_sigint);
-
-    log_init("server.log");
-
-    openMotorPort();
-    log_msg("OpenedMotors");
-
-    // connect_to_all_motors();
-    // rotateMotor(-177.77, 0, MOTOR_TYPE);
-    // rotateMotor(178.53, 1, MOTOR_TYPE);
-    // disconnect_all_motors();
-        
-    
     const char *SECRET = getenv("MOTOR_SECRET");
     if(!SECRET)
     {
@@ -153,6 +158,7 @@ int main()
     }
 
     log_msg("TCP server started at port: %d", PORT);
+    atomic_store(&is_running, 1);
 
     if((listen(sockfd,5)) != 0)
     {
@@ -289,6 +295,10 @@ int main()
                             isLocked = false;
                         }
                     }
+                    if(strncmp(ptr, "ESTOP", 5) == 0)
+                    {
+                        emergancy_stop();
+                    }
                     if(strncmp(ptr, "motor:", 6) == 0)
                     {
                         ptr += 6;
@@ -396,11 +406,138 @@ int main()
         close(connfd);
         disconnect_all_motors();
     }
-
-    
+    atomic_store(&is_running, 0);
     close(sockfd);
+    disconnect_all_motors();
+    return NULL;  
+}
+
+void* send_speed_threat(void* arg)
+{
+    int send_speed_fd, speed_client_fd;
+
+    struct sockaddr_in servaddr, cliaddr;
+    socklen_t len;
+
+    log_msg("Starting send speed thread on port %d", SPEED_SEND_PORT);
+
+    send_speed_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if(send_speed_fd < 0)
+    {
+        perror("Cannot open send speed socket");
+        return NULL;
+    }
+
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(SPEED_SEND_PORT);
+    servaddr.sin_family = AF_INET;
+
+    int opt = 1;
+    if(setsockopt(send_speed_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        perror("SEND SPEED setsockopt failed");
+        close(send_speed_fd);
+        return NULL;
+    }
+
+    if(bind(send_speed_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
+    {
+        perror("SEND SPEED BIND FAILED");
+        close(send_speed_fd);
+        return NULL;
+    }
+
+    if(listen(send_speed_fd, 5) != 0)
+    {
+        perror("SEND SPEED LISTEN FAILED");
+        close(send_speed_fd);
+        return NULL;
+    }
+
+    log_msg("SEND SPEED started listening");
+
+    while(1)
+    {
+        len = sizeof(cliaddr);  
+        int send_speed_client_fd = accept(send_speed_fd, (struct sockaddr*)&cliaddr, &len);  
+
+        if(send_speed_client_fd < 0 )
+        {
+            if(atomic_load(&is_running))  // Only log if still running
+                perror("Error accepting speed client");
+            continue;
+        }
+        log_msg("SEND SPEED CLIENT ACCEPTED");
+        while(atomic_load(&is_running))
+        {
+            double goal_speed_1 = getGoalSpeed(2, MOTOR_TYPE);
+            double goal_speed_2 = getGoalSpeed(3, MOTOR_TYPE);
+
+            char buffer[256];
+            // FIX 2: Add the actual values to snprintf
+            snprintf(buffer, sizeof(buffer), 
+                    "{\"motor2\":%.3f,\"motor3\":%.3f,\"timestamp\":%ld}\n",
+                    goal_speed_1, goal_speed_2, time(NULL));
+
+            ssize_t sent = write(send_speed_client_fd, buffer, strlen(buffer));
+            if(sent <= 0) {
+                log_msg("Send speed client disconnected");
+                break;
+            }
+            
+            usleep(100000);  // 100ms = 10Hz
+        }
+
+        close(send_speed_client_fd);
+    }
+
+    close(send_speed_fd);
+    return NULL;
+}
+
+int main()
+{ 
+    signal(SIGSEGV, emergancy_stop);
+    signal(SIGINT, handle_sigint);
+    signal(SIGTERM, emergancy_stop);
+
+
+    log_init("server.log");
+
+    openMotorPort();
+    log_msg("OpenedMotors");
+
+    // connect_to_all_motors();
+    // rotateMotor(-177.77, 0, MOTOR_TYPE);
+    // rotateMotor(178.53, 1, MOTOR_TYPE);
+    // disconnect_all_motors();
+
+    pthread_t control_td, speed_send_td;
+
+    // FIX 1: Add & to pthread_create and use correct variable name
+    if(pthread_create(&control_td, NULL, control_threat, NULL) != 0)
+    {
+        perror("Creating a control thread failed");
+        log_close();
+        exit(1);
+    }
+    if(pthread_create(&speed_send_td, NULL, send_speed_threat, NULL) != 0)
+    {
+        perror("Creating a send speed thread failed");
+        log_close();
+        exit(1);
+    }
+
+    log_msg("Both threads are created");
+
+    pthread_join(control_td, NULL);
+    pthread_join(speed_send_td, NULL);  
+
     disconnect_all_motors();
 
     closeMotorPort();
+
+    log_close();
     return 0;
 }

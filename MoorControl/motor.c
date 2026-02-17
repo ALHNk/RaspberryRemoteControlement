@@ -434,8 +434,8 @@ double getGoalSpeed(uint8_t motor_index, uint8_t motor_model)
 
     double speed = raw_speed * multiplier;
 
-    log_msg("Motor %d goal speed = %.2f rpm (raw=%d)",
-            motor_index, speed, raw_speed);
+   // log_msg("Motor %d goal speed = %.2f rpm (raw=%d)",
+   //         motor_index, speed, raw_speed);
 
     return speed;
 }
