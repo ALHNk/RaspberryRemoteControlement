@@ -50,14 +50,21 @@ void handle_sigint(int sig)
 
 }
 
+// void emergancy_stop()
+// {
+//     setGoalSpeed(0, 2, MOTOR_TYPE);
+//     setGoalSpeed(0, 3, MOTOR_TYPE);
+//     disconnect_all_motors();
+//     closeMotorPort();
+//     printf("Emergency Stop");
+//     exit(1);
+// }
 void emergancy_stop()
 {
     setGoalSpeed(0, 2, MOTOR_TYPE);
     setGoalSpeed(0, 3, MOTOR_TYPE);
     disconnect_all_motors();
-    closeMotorPort();
     printf("Emergency Stop");
-    exit(1);
 }
 
 void generate_secret(char *buf, int length) {
