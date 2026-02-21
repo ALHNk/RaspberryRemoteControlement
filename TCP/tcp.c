@@ -89,7 +89,7 @@ void change_speed(double speed, int motor_id)
     double right = speed * (1 + k);
 
     setGoalSpeed(left,  motor_id,     MOTOR_TYPE);
-    setGoalSpeed(right, motor_id + 1, MOTOR_TYPE);
+    setGoalSpeed(-right, motor_id + 1, MOTOR_TYPE);
 }
 
 
@@ -383,8 +383,8 @@ void* control_threat(void* arg)
                         double prot = strtod(ptr, &ptr);
                         prot = prot /45.0f;
                         float local_speed = prot * 5.0f;
-                        setGoalSpeed(local_speed, motor_id, MOTOR_TYPE);
-                        setGoalSpeed(local_speed, motor_id+1, MOTOR_TYPE);
+                        setGoalSpeed(-local_speed, motor_id, MOTOR_TYPE);
+                        setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
                     }
                     else if(strncmp(ptr, "twodegree:", 10) == 0)
                     {

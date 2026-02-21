@@ -40,7 +40,7 @@
 #define PRO_THIRD_ID                       3
 #define PRO_FOURTH_ID                       4
 #define MX_DXL_ID                          5                   
-#define BAUDRATE                        1000000
+#define BAUDRATE                        115200
 
      
 
