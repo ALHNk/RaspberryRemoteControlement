@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "dynamixel_sdk.h"
+#include "dynamixel_sdk/dynamixel_sdk.h"
 
 #define DEVICENAME "/dev/serial/dynamixel"
 #define BAUDRATE 115200
