@@ -386,15 +386,54 @@ void* control_threat(void* arg)
                         setGoalSpeed(-local_speed, motor_id, MOTOR_TYPE);
                         setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
                     }
+                    // else if(strncmp(ptr, "twodegree:", 10) == 0)
+                    // {
+                    //     ptr += 10;
+                    //     double td = strtod(ptr, &ptr);
+                    //     double angle1 = -177.78 + td * 287.41;
+                    //     double angle2 =  177.78 - td * 287.41;
+			        //     log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+                    //     rotateMotor(angle1, motor_id, MOTOR_TYPE);
+                    //     rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
+                    // }
                     else if(strncmp(ptr, "twodegree:", 10) == 0)
                     {
                         ptr += 10;
                         double td = strtod(ptr, &ptr);
+
+                        // Parse optional cmd_id after second colon
+                        int cmd_id = -1;
+                        if (*ptr == ':') {
+                            ptr++;
+                            cmd_id = (int)strtol(ptr, &ptr, 10);
+                        }
+
+                        // Timestamp on receive
+                        struct timespec ts;
+                        clock_gettime(CLOCK_REALTIME, &ts);
+                        long long recv_ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
+
+                        log_msg("delay_estimate,cmd_id=%d,timestamp_ms=%lld,event=RECEIVED,value=%f",
+                                cmd_id, recv_ms, td);
+
                         double angle1 = -177.78 + td * 287.41;
                         double angle2 =  177.78 - td * 287.41;
-			            log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+                        log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
+
+                        // Timestamp after execution
+                        clock_gettime(CLOCK_REALTIME, &ts);
+                        long long exec_ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
+                        log_msg("delay_estimate,cmd_id=%d,timestamp_ms=%lld,event=EXECUTED,value=%f",
+                                cmd_id, exec_ms, td);
+
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
+
+                        clock_gettime(CLOCK_REALTIME, &ts);
+                        long long done_ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
+                        log_msg("delay_estimate,cmd_id=%d,timestamp_ms=%lld,event=DONE,value=%f",
+                                cmd_id, done_ms, td);
                     }
                     else 
                     {
