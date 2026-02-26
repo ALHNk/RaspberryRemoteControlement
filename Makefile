@@ -3,9 +3,12 @@
 ##################################################
 
 TARGET      = motor_server
+TARGET_STOP = stop
 
 DIR_DXL    = /home/robotics/Dependencies/DynamixelSDK/c
 DIR_OBJS   = .objects
+
+STOP_OBJECTS = $(DIR_OBJS)/stop.o
 
 CC          = gcc
 CX          = g++
@@ -31,8 +34,11 @@ all: $(TARGET)
 $(TARGET): make_directory $(OBJECTS)
 	$(LNKCC) $(LNKFLAGS) $(OBJECTS) -o $(TARGET) $(LIBRARIES)
 
+$(TARGET_STOP): make_directory $(STOP_OBJECTS)
+	$(CC) $(CCFLAGS) $(STOP_OBJECTS) -o $(TARGET_STOP) $(LIBRARIES)
+
 clean:
-	rm -rf $(TARGET) $(DIR_OBJS) core *~ *.a *.so *.lo
+	rm -rf $(TARGET) $(TARGET_STOP) $(DIR_OBJS) core *~ *.a *.so *.lo
 
 make_directory:
 	mkdir -p $(DIR_OBJS)
@@ -44,4 +50,7 @@ $(DIR_OBJS)/%.o: MoorControl/%.c
 	$(CC) $(CCFLAGS) -c $< -o $@
 
 $(DIR_OBJS)/%.o: Logger/%.c
+	$(CC) $(CCFLAGS) -c $< -o $@
+
+$(DIR_OBJS)/stop.o: MoorControl/stop.c
 	$(CC) $(CCFLAGS) -c $< -o $@
