@@ -396,6 +396,23 @@ void* control_threat(void* arg)
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     }
+                    else if(strncmp(ptr, "wbr:", 4) == 0)
+                    {
+                        ptr += 4;
+                        double td = strtod(ptr, &ptr);
+
+                        double MAX_ANGLE = 177.78;
+
+                        double t = (td + 45.0) / 90.0;
+
+                        double angle1 = t * MAX_ANGLE;
+                        double angle2 = (1.0 - t) * MAX_ANGLE;
+
+                        log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+
+                        rotateMotor(angle1, motor_id, MOTOR_TYPE);
+                        rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
+                    }
                     else 
                     {
                         ptr++;
