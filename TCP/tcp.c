@@ -401,12 +401,8 @@ void* control_threat(void* arg)
                         ptr += 4;
                         double td = strtod(ptr, &ptr);
 
-                        double MAX_ANGLE = 177.78;
-
-                        double t = (td + 45.0) / 90.0;
-
-                        double angle1 = t * MAX_ANGLE;
-                        double angle2 = (1.0 - t) * MAX_ANGLE;
+                        double angle1 = -177.78 + (td + 45.0) * 287.41 / 90.0;
+                        double angle2 =  177.78 - (td + 45.0) * 287.41 / 90.0;
 
                         log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
 
