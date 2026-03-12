@@ -402,7 +402,7 @@ void* control_threat(void* arg)
                         double td = strtod(ptr, &ptr);
 
                         double angle1 = -177.78 + (td + 45.0) * 287.41 / 90.0;
-                        double angle2 =  177.78 - (td + 45.0) * 287.41 / 90.0;
+                        double angle2 =  177.78 - (45.0 - td) * 287.41 / 90.0;
 
                         log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
 
