@@ -408,7 +408,7 @@ void* control_threat(void* arg)
                         ptr += 4;
                         double td = strtod(ptr, &ptr);
 
-                        double k = fabs(td) / 45.0;
+                        double k = fabs(td) / 70.0;
 
                         double angle1 = currentDegreesOfSize1;
                         double angle2 = currentDegreesOfSize2;
