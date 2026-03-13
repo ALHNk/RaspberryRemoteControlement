@@ -30,6 +30,8 @@ typedef enum {false, true} bool;
 
 double speedAngel = 0;
 double globalSpeed = 0;
+double currentDegreesOfSize1 = 0;
+double currentDegreesOfSize2 = 0;
 
 bool torquedoff = 1;
 bool isSan = 0;
@@ -222,6 +224,9 @@ void* control_threat(void* arg)
         double motor2limitlow = getLimitLow(1, MOTOR_TYPE);
         double motor2limitup  = getLimitUp(1, MOTOR_TYPE);
         
+        currentDegreesOfSize1 = getPosition(0, MOTOR_TYPE);
+        currentDegreesOfSize2 = getPosition(1, MOTOR_TYPE);
+
         char reply[512];
         snprintf(reply, sizeof(reply),
             "{"
@@ -389,9 +394,11 @@ void* control_threat(void* arg)
                     else if(strncmp(ptr, "twodegree:", 10) == 0)
                     {
                         ptr += 10;
-                        double td = strtod(ptr, &ptr);
+                        double td = strtod(ptr, &ptr);                        
                         double angle1 = -177.78 + td * 287.41;
                         double angle2 =  177.78 - td * 287.41;
+                        currentDegreesOfSize1 = angle1;
+                        currentDegreesOfSize2 = angle2;
 			            log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
@@ -401,13 +408,32 @@ void* control_threat(void* arg)
                         ptr += 4;
                         double td = strtod(ptr, &ptr);
 
-                        double angle1 = -177.78 + (td + 45.0) * 287.41 / 90.0;
-                        double angle2 =  177.78 - (45.0 - td) * 287.41 / 90.0;
+                        double k = fabs(td) / 45.0;
+
+                        double angle1 = currentDegreesOfSize1;
+                        double angle2 = currentDegreesOfSize2;
+
+                        if(td > 0)
+                        {
+                            angle1 = currentDegreesOfSize1 +
+                                    (-177.78 - currentDegreesOfSize1) * k;
+
+                            rotateMotor(angle1, motor_id, MOTOR_TYPE);
+                        }
+                        else if(td < 0)
+                        {
+                            angle2 = currentDegreesOfSize2 +
+                                    (177.78 - currentDegreesOfSize2) * k;
+
+                            rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
+                        }
+                        else
+                        {
+                            rotateMotor(currentDegreesOfSize1, motor_id, MOTOR_TYPE);
+                            rotateMotor(currentDegreesOfSize2, motor_id + 1, MOTOR_TYPE);
+                        }
 
                         log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
-
-                        rotateMotor(angle1, motor_id, MOTOR_TYPE);
-                        rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     }
                     else 
                     {
