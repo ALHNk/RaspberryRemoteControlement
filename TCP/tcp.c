@@ -415,15 +415,13 @@ void* control_threat(void* arg)
 
                         if(td > 0)
                         {
-                            angle1 = currentDegreesOfSize1 +
-                                    (-177.78 - currentDegreesOfSize1) * k;
+                            angle1 = currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k;
 
                             rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         }
                         else if(td < 0)
                         {
-                            angle2 = currentDegreesOfSize2 +
-                                    (177.78 - currentDegreesOfSize2) * k;
+                            angle2 = currentDegreesOfSize2 + (-109.63- currentDegreesOfSize2) * k;
 
                             rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                         }
