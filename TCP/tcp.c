@@ -396,9 +396,9 @@ void* control_threat(void* arg)
                     //     rotateMotor(angle1, motor_id, MOTOR_TYPE);
                     //     rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     // }
-                    else if(strncmp(ptr, "twodegree:", 10) == 0)
+                    else if(strncmp(ptr, "estimate:", 9) == 0)
                     {
-                        ptr += 10;
+                        ptr += 9;
                         double td = strtod(ptr, &ptr);
 
                         // Parse optional cmd_id after second colon
