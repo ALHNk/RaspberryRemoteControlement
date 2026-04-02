@@ -87,11 +87,11 @@ void change_speed(double speed, int motor_id)
     if (k > 1) k = 1;
     if (k < -1) k = -1;
 
-    double left  = speed * (1 + k);
-    double right = speed * (1 - k);
+    double left  = speed * (1 - k);
+    double right = speed * (1 + k);
 
-    setGoalSpeed(-left,  motor_id,     MOTOR_TYPE);
-    setGoalSpeed(right, motor_id + 1, MOTOR_TYPE);
+    setGoalSpeed(left,  motor_id,     MOTOR_TYPE);
+    setGoalSpeed(-right, motor_id + 1, MOTOR_TYPE);
 }
 
 
