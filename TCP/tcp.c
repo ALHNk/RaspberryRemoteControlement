@@ -12,6 +12,8 @@
 #include <stdatomic.h>
 #include <pthread.h>
 
+#include<fcntl.h>
+
 
 #include "../MoorControl/motor.h"
 #include "logger.h"
@@ -461,11 +463,14 @@ void* udp_control_thread(void* arg)
 {
     int udpfd;
     struct sockaddr_in servaddr, cliaddr;
-    socklen_t len = sizeof(cliaddr);
+    socklen_t len;
     char buffer[256];
 
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
     if(udpfd < 0) { perror("UDP socket failed"); return NULL; }
+
+    int flags = fcntl(udpfd, F_GETFL, 0);
+    fcntl(udpfd, F_SETFL, flags | O_NONBLOCK);
 
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family      = AF_INET;
@@ -483,65 +488,71 @@ void* udp_control_thread(void* arg)
 
     while(1)
     {
-        int n = recvfrom(udpfd, buffer, sizeof(buffer)-1, 0,
-                         (struct sockaddr*)&cliaddr, &len);
-        if(n <= 0) continue;
-        buffer[n] = '\0';
+        len = sizeof(cliaddr);
 
-        char *ptr = buffer;
-        uint8_t motor_id = 0;
+        int n;
 
-        // parse motor id first if present
-        if(strncmp(ptr, "motor:", 6) == 0)
+        // читаем ВСЕ пакеты из очереди
+        while((n = recvfrom(udpfd, buffer, sizeof(buffer)-1, 0,
+                            (struct sockaddr*)&cliaddr, &len)) > 0)
         {
-            ptr += 6;
-            motor_id = strtod(ptr, &ptr);
-        }
+            buffer[n] = '\0';
 
-        if(strncmp(ptr, "speed:", 6) == 0)
-        {
-            ptr += 6;
-            isSan = 1;
-            double speed = strtod(ptr, &ptr);
-            globalSpeed = speed;
-            change_speed(globalSpeed, motor_id);
-        }
-        else if(strncmp(ptr, "san:", 4) == 0)
-        {
-            ptr += 4;
-            speedAngel = strtod(ptr, &ptr);
-            change_speed(globalSpeed, motor_id);
-        }
-        else if(strncmp(ptr, "prot:", 5) == 0)
-        {
-            ptr += 5;
-            isSan = 0;
-            double prot = strtod(ptr, &ptr);
-            prot = prot / 45.0f;
-            float local_speed = prot * 5.0f;
-            setGoalSpeed(-local_speed, motor_id,   MOTOR_TYPE);
-            setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
-        }
-        else if(strncmp(ptr, "wbr:", 4) == 0)
-        {
-            ptr += 4;
-            double td = strtod(ptr, &ptr);
-            double k = fabs(td) / 70.0;
+            char *ptr = buffer;
+            uint8_t motor_id = 0;
 
-            if(td > 0)
-                rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, motor_id, MOTOR_TYPE);
-            else if(td < 0)
-                rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, motor_id+1, MOTOR_TYPE);
-            else
+            if(strncmp(ptr, "motor:", 6) == 0)
             {
-                rotateMotor(currentDegreesOfSize1, motor_id,   MOTOR_TYPE);
-                rotateMotor(currentDegreesOfSize2, motor_id+1, MOTOR_TYPE);
+                ptr += 6;
+                motor_id = strtod(ptr, &ptr);
             }
 
-            log_msg("UDP wbr: %f", td);
+            if(strncmp(ptr, "speed:", 6) == 0)
+            {
+                ptr += 6;
+                isSan = 1;
+                double speed = strtod(ptr, &ptr);
+                globalSpeed = speed;
+                change_speed(globalSpeed, motor_id);
+            }
+            else if(strncmp(ptr, "san:", 4) == 0)
+            {
+                ptr += 4;
+                speedAngel = strtod(ptr, &ptr);
+                change_speed(globalSpeed, motor_id);
+            }
+            else if(strncmp(ptr, "prot:", 5) == 0)
+            {
+                ptr += 5;
+                isSan = 0;
+                double prot = strtod(ptr, &ptr);
+                prot = prot / 45.0f;
+                float local_speed = prot * 5.0f;
+                setGoalSpeed(-local_speed, motor_id,   MOTOR_TYPE);
+                setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
+            }
+            else if(strncmp(ptr, "wbr:", 4) == 0)
+            {
+                ptr += 4;
+                double td = strtod(ptr, &ptr);
+                double k = fabs(td) / 70.0;
+
+                if(td > 0)
+                    rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, motor_id, MOTOR_TYPE);
+                else if(td < 0)
+                    rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, motor_id+1, MOTOR_TYPE);
+                else
+                {
+                    rotateMotor(currentDegreesOfSize1, motor_id,   MOTOR_TYPE);
+                    rotateMotor(currentDegreesOfSize2, motor_id+1, MOTOR_TYPE);
+                }
+            }
+
+            // лучше временно убрать лог
+            // log_msg("UDP cmd: %s", buffer);
         }
 
-        log_msg("UDP cmd: %s", buffer);
+        usleep(1000);
     }
 
     close(udpfd);
