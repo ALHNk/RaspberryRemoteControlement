@@ -444,7 +444,7 @@ void* control_threat(void* arg)
                     //double v1 = getGoalSpeed(2, MOTOR_TYPE);
                     //double v2 = getGoalSpeed(3, MOTOR_TYPE);
                 }
-                log_msg("came message %s", line);
+                // log_msg("came message %s", line);
                 line = strtok(NULL, "\n");
             }            
             memset(buffer, 0, MAX);
@@ -552,7 +552,7 @@ void* udp_control_thread(void* arg)
             // log_msg("UDP cmd: %s", buffer);
         }
 
-        usleep(1000);
+        // usleep(1000);
     }
 
     close(udpfd);
