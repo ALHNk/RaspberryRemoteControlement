@@ -22,6 +22,7 @@
 int connfd, sockfd;
 #define PORT 5050
 #define SPEED_SEND_PORT 5051
+#define UDP_CONTROL_PORT 5052
 #define MAX 100
 // #define TRUE 1
 // #define FALSE 0
@@ -330,25 +331,25 @@ void* control_threat(void* arg)
                         double velocity = strtod(ptr, &ptr);
                         setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
                     }
-                    else if(strncmp(ptr, "san:", 4) == 0)
-                    {
-                        ptr += 4;
-                        double san = strtod(ptr, &ptr);
-                        speedAngel = san;
-                        change_speed(globalSpeed, motor_id);      
-                    }
-                    else if(strncmp(ptr, "speed:", 6) == 0)
-                    {
-                        ptr += 6;
-                        isSan = 1;
-                        double speed = strtod(ptr, &ptr);
+                    // else if(strncmp(ptr, "san:", 4) == 0)
+                    // {
+                    //     ptr += 4;
+                    //     double san = strtod(ptr, &ptr);
+                    //     speedAngel = san;
+                    //     change_speed(globalSpeed, motor_id);      
+                    // }
+                    // else if(strncmp(ptr, "speed:", 6) == 0)
+                    // {
+                    //     ptr += 6;
+                    //     isSan = 1;
+                    //     double speed = strtod(ptr, &ptr);
                         
-                        if(isLocked == false) 
-                        {
-                            globalSpeed = speed;
-                            change_speed(globalSpeed, motor_id);                        
-                        }
-                    }
+                    //     if(isLocked == false) 
+                    //     {
+                    //         globalSpeed = speed;
+                    //         change_speed(globalSpeed, motor_id);                        
+                    //     }
+                    // }
                     else if (strncmp(ptr, "torque:", 7) == 0)
                     {
                         ptr += 7;
@@ -381,16 +382,16 @@ void* control_threat(void* arg)
                             log_msg("Invalid torque");
                         }
                     }
-                    else if(strncmp(ptr, "prot:", 5) == 0)
-                    {
-                        ptr += 5;
-                        isSan = 0;
-                        double prot = strtod(ptr, &ptr);
-                        prot = prot /45.0f;
-                        float local_speed = prot * 5.0f;
-                        setGoalSpeed(-local_speed, motor_id, MOTOR_TYPE);
-                        setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
-                    }
+                    // else if(strncmp(ptr, "prot:", 5) == 0)
+                    // {
+                    //     ptr += 5;
+                    //     isSan = 0;
+                    //     double prot = strtod(ptr, &ptr);
+                    //     prot = prot /45.0f;
+                    //     float local_speed = prot * 5.0f;
+                    //     setGoalSpeed(-local_speed, motor_id, MOTOR_TYPE);
+                    //     setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
+                    // }
                     else if(strncmp(ptr, "twodegree:", 10) == 0)
                     {
                         ptr += 10;
@@ -403,36 +404,36 @@ void* control_threat(void* arg)
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                     }
-                    else if(strncmp(ptr, "wbr:", 4) == 0)
-                    {
-                        ptr += 4;
-                        double td = strtod(ptr, &ptr);
+                    // else if(strncmp(ptr, "wbr:", 4) == 0)
+                    // {
+                    //     ptr += 4;
+                    //     double td = strtod(ptr, &ptr);
 
-                        double k = fabs(td) / 70.0;
+                    //     double k = fabs(td) / 70.0;
 
-                        double angle1 = currentDegreesOfSize1;
-                        double angle2 = currentDegreesOfSize2;
+                    //     double angle1 = currentDegreesOfSize1;
+                    //     double angle2 = currentDegreesOfSize2;
 
-                        if(td > 0)
-                        {
-                            angle1 = currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k;
+                    //     if(td > 0)
+                    //     {
+                    //         angle1 = currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k;
 
-                            rotateMotor(angle1, motor_id, MOTOR_TYPE);
-                        }
-                        else if(td < 0)
-                        {
-                            angle2 = currentDegreesOfSize2 + (-109.63- currentDegreesOfSize2) * k;
+                    //         rotateMotor(angle1, motor_id, MOTOR_TYPE);
+                    //     }
+                    //     else if(td < 0)
+                    //     {
+                    //         angle2 = currentDegreesOfSize2 + (-109.63- currentDegreesOfSize2) * k;
 
-                            rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
-                        }
-                        else
-                        {
-                            rotateMotor(currentDegreesOfSize1, motor_id, MOTOR_TYPE);
-                            rotateMotor(currentDegreesOfSize2, motor_id + 1, MOTOR_TYPE);
-                        }
+                    //         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
+                    //     }
+                    //     else
+                    //     {
+                    //         rotateMotor(currentDegreesOfSize1, motor_id, MOTOR_TYPE);
+                    //         rotateMotor(currentDegreesOfSize2, motor_id + 1, MOTOR_TYPE);
+                    //     }
 
-                        log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
-                    }
+                    //     log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+                    // }
                     else 
                     {
                         ptr++;
@@ -454,6 +455,97 @@ void* control_threat(void* arg)
     close(sockfd);
     disconnect_all_motors();
     return NULL;  
+}
+
+void* udp_control_thread(void* arg)
+{
+    int udpfd;
+    struct sockaddr_in servaddr, cliaddr;
+    socklen_t len = sizeof(cliaddr);
+    char buffer[256];
+
+    udpfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if(udpfd < 0) { perror("UDP socket failed"); return NULL; }
+
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_family      = AF_INET;
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port        = htons(UDP_CONTROL_PORT);
+
+    if(bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
+    {
+        perror("UDP bind failed");
+        close(udpfd);
+        return NULL;
+    }
+
+    log_msg("UDP control listening on port %d", UDP_CONTROL_PORT);
+
+    while(1)
+    {
+        int n = recvfrom(udpfd, buffer, sizeof(buffer)-1, 0,
+                         (struct sockaddr*)&cliaddr, &len);
+        if(n <= 0) continue;
+        buffer[n] = '\0';
+
+        char *ptr = buffer;
+        uint8_t motor_id = 0;
+
+        // parse motor id first if present
+        if(strncmp(ptr, "motor:", 6) == 0)
+        {
+            ptr += 6;
+            motor_id = strtod(ptr, &ptr);
+        }
+
+        if(strncmp(ptr, "speed:", 6) == 0)
+        {
+            ptr += 6;
+            isSan = 1;
+            double speed = strtod(ptr, &ptr);
+            globalSpeed = speed;
+            change_speed(globalSpeed, motor_id);
+        }
+        else if(strncmp(ptr, "san:", 4) == 0)
+        {
+            ptr += 4;
+            speedAngel = strtod(ptr, &ptr);
+            change_speed(globalSpeed, motor_id);
+        }
+        else if(strncmp(ptr, "prot:", 5) == 0)
+        {
+            ptr += 5;
+            isSan = 0;
+            double prot = strtod(ptr, &ptr);
+            prot = prot / 45.0f;
+            float local_speed = prot * 5.0f;
+            setGoalSpeed(-local_speed, motor_id,   MOTOR_TYPE);
+            setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
+        }
+        else if(strncmp(ptr, "wbr:", 4) == 0)
+        {
+            ptr += 4;
+            double td = strtod(ptr, &ptr);
+            double k = fabs(td) / 70.0;
+
+            if(td > 0)
+                rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, motor_id, MOTOR_TYPE);
+            else if(td < 0)
+                rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, motor_id+1, MOTOR_TYPE);
+            else
+            {
+                rotateMotor(currentDegreesOfSize1, motor_id,   MOTOR_TYPE);
+                rotateMotor(currentDegreesOfSize2, motor_id+1, MOTOR_TYPE);
+            }
+
+            log_msg("UDP wbr: %f", td);
+        }
+
+        log_msg("UDP cmd: %s", buffer);
+    }
+
+    close(udpfd);
+    return NULL;
 }
 
 void* send_speed_threat(void* arg)
@@ -566,6 +658,14 @@ int main()
         log_close();
         exit(1);
     }
+
+    pthread_t udp_td;
+    if(pthread_create(&udp_td, NULL, udp_control_thread, NULL) != 0)
+    {
+        perror("Creating UDP thread failed");
+        log_close();
+        exit(1);
+    }
     //if(pthread_create(&speed_send_td, NULL, send_speed_threat, NULL) != 0)
     //{
     //    perror("Creating a send speed thread failed");
@@ -576,6 +676,7 @@ int main()
     log_msg("Both threads are created");
 
     pthread_join(control_td, NULL);
+    pthread_join(udp_td, NULL);
    // pthread_join(speed_send_td, NULL);  
 
     disconnect_all_motors();
