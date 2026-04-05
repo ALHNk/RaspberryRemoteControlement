@@ -500,6 +500,11 @@ void* udp_control_thread(void* arg)
             continue;
 
         control_state = packet;
+        printf("speed=%f san=%f prot=%f wbr=%f id=%d\n",
+        packet.speed,
+        packet.san,
+        packet.prot,
+        packet.motor_id);
     }
 
     close(udpfd);
