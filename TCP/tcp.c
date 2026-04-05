@@ -459,104 +459,89 @@ void* control_threat(void* arg)
     return NULL;  
 }
 
+typedef struct
+{
+    float speed;
+    float san;
+    float prot;
+   // float wbr;
+    uint8_t motor_id;
+} ControlUDPPacket;
+
+volatile ControlUDPPacket control_state;
+
 void* udp_control_thread(void* arg)
 {
     int udpfd;
     struct sockaddr_in servaddr, cliaddr;
     socklen_t len;
-    char buffer[256];
+    ControlUDPPacket packet;
 
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
-    if(udpfd < 0) { perror("UDP socket failed"); return NULL; }
-
-    int flags = fcntl(udpfd, F_GETFL, 0);
-    fcntl(udpfd, F_SETFL, flags | O_NONBLOCK);
+    if(udpfd < 0) return NULL;
 
     memset(&servaddr, 0, sizeof(servaddr));
-    servaddr.sin_family      = AF_INET;
+    servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port        = htons(UDP_CONTROL_PORT);
+    servaddr.sin_port = htons(UDP_CONTROL_PORT);
 
     if(bind(udpfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0)
     {
-        perror("UDP bind failed");
         close(udpfd);
         return NULL;
     }
 
-    log_msg("UDP control listening on port %d", UDP_CONTROL_PORT);
-
     while(1)
     {
-        len = sizeof(cliaddr);
+        int n = recvfrom(udpfd, &packet, sizeof(packet), 0,
+                     (struct sockaddr*)&cliaddr, &len);
 
-        int n;
+        if(n != sizeof(packet))
+            continue;
 
-        // читаем ВСЕ пакеты из очереди
-        while((n = recvfrom(udpfd, buffer, sizeof(buffer)-1, 0,
-                            (struct sockaddr*)&cliaddr, &len)) > 0)
-        {
-            buffer[n] = '\0';
-
-            char *ptr = buffer;
-            uint8_t motor_id = 0;
-
-            if(strncmp(ptr, "motor:", 6) == 0)
-            {
-                ptr += 6;
-                motor_id = strtod(ptr, &ptr);
-            }
-
-            if(strncmp(ptr, "speed:", 6) == 0)
-            {
-                ptr += 6;
-                isSan = 1;
-                double speed = strtod(ptr, &ptr);
-                globalSpeed = speed;
-                change_speed(globalSpeed, motor_id);
-            }
-            else if(strncmp(ptr, "san:", 4) == 0)
-            {
-                ptr += 4;
-                speedAngel = strtod(ptr, &ptr);
-                change_speed(globalSpeed, motor_id);
-            }
-            else if(strncmp(ptr, "prot:", 5) == 0)
-            {
-                ptr += 5;
-                isSan = 0;
-                double prot = strtod(ptr, &ptr);
-                prot = prot / 45.0f;
-                float local_speed = prot * 5.0f;
-                setGoalSpeed(-local_speed, motor_id,   MOTOR_TYPE);
-                setGoalSpeed(-local_speed, motor_id+1, MOTOR_TYPE);
-            }
-            else if(strncmp(ptr, "wbr:", 4) == 0)
-            {
-                ptr += 4;
-                double td = strtod(ptr, &ptr);
-                double k = fabs(td) / 70.0;
-
-                if(td > 0)
-                    rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, motor_id, MOTOR_TYPE);
-                else if(td < 0)
-                    rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, motor_id+1, MOTOR_TYPE);
-                else
-                {
-                    rotateMotor(currentDegreesOfSize1, motor_id,   MOTOR_TYPE);
-                    rotateMotor(currentDegreesOfSize2, motor_id+1, MOTOR_TYPE);
-                }
-            }
-
-            // лучше временно убрать лог
-            // log_msg("UDP cmd: %s", buffer);
-        }
-
-        // usleep(1000);
+        control_state = packet;
     }
 
     close(udpfd);
     return NULL;
+}
+
+void* control_motors_via_stream_threat(void* arg)
+{
+    while(1)
+    {
+        ControlUDPPacket s = control_state;
+
+        if(s.prot != 0)
+        {
+            double prot = s.prot / 45.0f;
+            float local_speed = prot * 5.0f;
+
+            setGoalSpeed(-local_speed, s.motor_id, MOTOR_TYPE);
+            setGoalSpeed(-local_speed, s.motor_id + 1, MOTOR_TYPE);
+        }
+        else
+        {
+            isSan = 1;
+            globalSpeed = s.speed;
+            speedAngel = s.san;
+
+            change_speed(globalSpeed, s.motor_id);
+        }
+
+        // if(s.wbr != 0)
+        // {
+        //     double td = s.wbr;
+        //     double k = fabs(td) / 70.0;
+
+        //     if(td > 0)
+        //         rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, s.motor_id, MOTOR_TYPE);
+        //     else
+        //         rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, s.motor_id+1, MOTOR_TYPE);
+        // }
+
+        usleep(10000); // 100 Hz
+    }
 }
 
 void* send_speed_threat(void* arg)
@@ -677,6 +662,14 @@ int main()
         log_close();
         exit(1);
     }
+
+    pthread_t stream_control_td;
+    if(pthread_create(&stream_control_td, NULL, control_motors_via_stream_threat, NULL) != 0)
+    {
+        perror("Creating Stream Control thread failed");
+        log_close();
+        exit(1);
+    }
     //if(pthread_create(&speed_send_td, NULL, send_speed_threat, NULL) != 0)
     //{
     //    perror("Creating a send speed thread failed");
@@ -688,6 +681,7 @@ int main()
 
     pthread_join(control_td, NULL);
     pthread_join(udp_td, NULL);
+    pthread_join(stream_control_td, NULL);
    // pthread_join(speed_send_td, NULL);  
 
     disconnect_all_motors();
