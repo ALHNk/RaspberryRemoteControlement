@@ -40,6 +40,7 @@ bool torquedoff = 1;
 bool isSan = 0;
 
 atomic_bool is_running = ATOMIC_VAR_INIT(0);
+atomic_bool torque_enabled = 0;
 
 
 int disconnect_all_motors();
@@ -111,6 +112,7 @@ int connect_to_all_motors()
             return 1;
         }
         torquedoff = 0;
+        atomic_store(&torque_enabled, 1);
     }
     return 0;
 }
@@ -125,6 +127,7 @@ int disconnect_all_motors()
     {
         disconnectMotor(i, MOTOR_TYPE);
         torquedoff = 1;
+        atomic_store(&torque_enabled, 0);
     }
     return 0;
 }
@@ -458,6 +461,7 @@ void* control_threat(void* arg)
     disconnect_all_motors();
     return NULL;  
 }
+pthread_mutex_t control_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct
 {
@@ -476,7 +480,7 @@ void* udp_control_thread(void* arg)
 {
     int udpfd;
     struct sockaddr_in servaddr, cliaddr;
-    socklen_t len;
+    socklen_t len = sizeof(cliaddr);
     ControlUDPPacket packet;
 
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -502,7 +506,9 @@ void* udp_control_thread(void* arg)
         if(n != sizeof(packet))
             continue;
 
+        pthread_mutex_lock(&control_mutex);
         control_state = packet;
+        pthread_mutex_unlock(&control_mutex);
     }
 
     close(udpfd);
@@ -514,7 +520,14 @@ void* control_motors_via_stream_threat(void* arg)
     printf("CONTROL STATE IS STARTED ____---------");
     while(1)
     {
-        ControlUDPPacket s = control_state;
+        if(!atomic_load(&torque_enabled))
+        {
+            continue;
+        }
+        ControlUDPPacket s;
+        pthread_mutex_lock(&control_mutex);
+        s = control_state;
+        pthread_mutex_unlock(&control_mutex);
 
         if(s.prot != 0)
         {
