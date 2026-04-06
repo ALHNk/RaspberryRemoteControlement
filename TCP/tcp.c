@@ -544,16 +544,16 @@ void* control_motors_via_stream_threat(void* arg)
             usleep(10000);
             continue;
         }
-        if(get_time_ms() - atomic_load(&last_udp_packet_time) > 400)
-        {
-            pthread_mutex_lock(&motor_mutex);
-            setGoalSpeed(0,0,MOTOR_TYPE);
-            setGoalSpeed(0,1,MOTOR_TYPE);
-            pthread_mutex_unlock(&motor_mutex);
+        // if(get_time_ms() - atomic_load(&last_udp_packet_time) > 400)
+        // {
+        //     pthread_mutex_lock(&motor_mutex);
+        //     setGoalSpeed(0,0,MOTOR_TYPE);
+        //     setGoalSpeed(0,1,MOTOR_TYPE);
+        //     pthread_mutex_unlock(&motor_mutex);
 
-            usleep(10000);
-            continue;
-        }       
+        //     usleep(10000);
+        //     continue;
+        // }       
         ControlUDPPacket s;
         pthread_mutex_lock(&control_mutex);
         s = control_state;
