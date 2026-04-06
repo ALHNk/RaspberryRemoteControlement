@@ -40,7 +40,7 @@ bool torquedoff = 1;
 bool isSan = 0;
 
 atomic_bool is_running = ATOMIC_VAR_INIT(0);
-atomic_bool torque_enabled = 0;
+atomic_bool torque_enabled = ATOMIC_VAR_INIT(0);
 
 
 int disconnect_all_motors();

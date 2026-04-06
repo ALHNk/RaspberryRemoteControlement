@@ -5,8 +5,8 @@
 TARGET      = motor_server
 TARGET_STOP = stop
 
-# DIR_DXL    = /home/vrdev/AR-Control/Dependencies/DynamixelSDK/c
-DIR_DXL    = /home/robotics/Dependencies/DynamixelSDK/c
+DIR_DXL    = /home/vrdev/AR-Control/Dependencies/DynamixelSDK/c
+# DIR_DXL    = /home/robotics/Dependencies/DynamixelSDK/c
 DIR_OBJS   = .objects
 
 STOP_OBJECTS = $(DIR_OBJS)/stop.o
