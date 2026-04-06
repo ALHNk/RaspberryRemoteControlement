@@ -541,7 +541,7 @@ void* control_motors_via_stream_threat(void* arg)
     {
         if(!atomic_load(&torque_enabled))
         {
-            usleep(10000);
+            usleep(1000000);
             continue;
         }
         // if(get_time_ms() - atomic_load(&last_udp_packet_time) > 400)
