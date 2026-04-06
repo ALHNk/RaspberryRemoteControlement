@@ -41,6 +41,11 @@ bool isSan = 0;
 
 atomic_bool is_running = ATOMIC_VAR_INIT(0);
 atomic_bool torque_enabled = ATOMIC_VAR_INIT(0);
+atomic_bool emergency_flag = ATOMIC_VAR_INIT(0);
+
+pthread_mutex_t motor_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+atomic_long last_udp_packet_time;
 
 
 int disconnect_all_motors();
@@ -71,6 +76,7 @@ void emergancy_stop()
     setGoalSpeed(0, 3, MOTOR_TYPE);
     disconnect_all_motors();
     printf("Emergency Stop");
+    atomic_store(&emergency_flag, 1);
 }
 
 void generate_secret(char *buf, int length) {
@@ -474,14 +480,16 @@ typedef struct
     uint8_t pad3;
 } ControlUDPPacket;
 
-volatile ControlUDPPacket control_state;
+ControlUDPPacket control_state;
 
 void* udp_control_thread(void* arg)
 {
+    memset((void*)&control_state, 0, sizeof(ControlUDPPacket));
     int udpfd;
     struct sockaddr_in servaddr, cliaddr;
     socklen_t len = sizeof(cliaddr);
     ControlUDPPacket packet;
+    atomic_store(&last_udp_packet_time, get_time_ms());
 
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
     if(udpfd < 0) return NULL;
@@ -522,13 +530,24 @@ void* control_motors_via_stream_threat(void* arg)
     {
         if(!atomic_load(&torque_enabled))
         {
+            usleep(10000);
             continue;
         }
+        if(get_time_ms() - atomic_load(&last_udp_packet_time) > 200)
+        {
+            pthread_mutex_lock(&motor_mutex);
+            setGoalSpeed(0,0,MOTOR_TYPE);
+            setGoalSpeed(0,1,MOTOR_TYPE);
+            pthread_mutex_unlock(&motor_mutex);
+
+            usleep(10000);
+            continue;
+        }       
         ControlUDPPacket s;
         pthread_mutex_lock(&control_mutex);
         s = control_state;
         pthread_mutex_unlock(&control_mutex);
-
+        pthread_mutex_lock(&motor_mutex);
         if(s.prot != 0)
         {
             double prot = s.prot / 45.0f;
@@ -556,6 +575,8 @@ void* control_motors_via_stream_threat(void* arg)
         //     else
         //         rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, s.motor_id+1, MOTOR_TYPE);
         // }
+
+        pthread_mutex_unlock(&motor_mutex);
 
         usleep(10000); // 100 Hz
     }
