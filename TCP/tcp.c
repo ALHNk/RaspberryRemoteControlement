@@ -464,8 +464,10 @@ typedef struct
     float speed;
     float san;
     float prot;
-   // float wbr;
     uint8_t motor_id;
+    uint8_t pad1;
+    uint8_t pad2;
+    uint8_t pad3;
 } ControlUDPPacket;
 
 volatile ControlUDPPacket control_state;
@@ -491,6 +493,8 @@ void* udp_control_thread(void* arg)
         return NULL;
     }
 
+    printf("------------------size eeee =%ld----------------------\n", sizeof(ControlUDPPacket));
+
     while(1)
     {
         int n = recvfrom(udpfd, &packet, sizeof(packet), 0,
@@ -513,6 +517,7 @@ void* udp_control_thread(void* arg)
 
 void* control_motors_via_stream_threat(void* arg)
 {
+    printf("CONTROL STATE IS STARTED ____---------");
     while(1)
     {
         ControlUDPPacket s = control_state;
