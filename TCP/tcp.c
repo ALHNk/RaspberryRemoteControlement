@@ -13,6 +13,7 @@
 #include <pthread.h>
 
 #include<fcntl.h>
+#include<sys/time.h>
 
 
 #include "../MoorControl/motor.h"
