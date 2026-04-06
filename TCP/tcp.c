@@ -493,7 +493,6 @@ void* udp_control_thread(void* arg)
         return NULL;
     }
 
-    printf("------------------size eeee =%ld----------------------\n", sizeof(ControlUDPPacket));
 
     while(1)
     {
@@ -504,11 +503,6 @@ void* udp_control_thread(void* arg)
             continue;
 
         control_state = packet;
-        printf("speed=%f san=%f prot=%f id=%d\n",
-        packet.speed,
-        packet.san,
-        packet.prot,
-        packet.motor_id);
     }
 
     close(udpfd);
