@@ -127,8 +127,9 @@ int connect_to_all_motors()
             return 1;
         }
         torquedoff = 0;
-        atomic_store(&torque_enabled, 1);
+        
     }
+    atomic_store(&torque_enabled, 1);
     return 0;
 }
 
@@ -142,8 +143,9 @@ int disconnect_all_motors()
     {
         disconnectMotor(i, MOTOR_TYPE);
         torquedoff = 1;
-        atomic_store(&torque_enabled, 0);
+        
     }
+    atomic_store(&torque_enabled, 0);
     return 0;
 }
 
@@ -542,7 +544,7 @@ void* control_motors_via_stream_threat(void* arg)
             usleep(10000);
             continue;
         }
-        if(get_time_ms() - atomic_load(&last_udp_packet_time) > 200)
+        if(get_time_ms() - atomic_load(&last_udp_packet_time) > 400)
         {
             pthread_mutex_lock(&motor_mutex);
             setGoalSpeed(0,0,MOTOR_TYPE);
