@@ -57,6 +57,15 @@ pthread_mutex_t motor_mutex = PTHREAD_MUTEX_INITIALIZER;
 atomic_long last_udp_packet_time;
 
 
+
+typedef enum {
+    CONTROL_MODE_NONE,
+    CONTROL_MODE_TCP,
+    CONTROL_MODE_UDP
+} ControlMode;
+
+atomic_int active_control_mode = ATOMIC_VAR_INIT(CONTROL_MODE_NONE);
+
 int disconnect_all_motors();
 void handle_sigint(int sig)
 {
@@ -303,7 +312,7 @@ void* control_threat(void* arg)
             {
                 char *ptr = line;
                 uint8_t motor_id = 0;
-
+                atomic_store(&active_control_mode, CONTROL_MODE_TCP);
                 while(*ptr)
                 {
                     if(strncmp(ptr, "lock:", 5) == 0)
@@ -345,13 +354,20 @@ void* control_threat(void* arg)
                         double  angle = strtod(ptr, &ptr);
                         if(angle > 180) angle -=360;
                         else if(angle < -180) angle +=360;
-                        if(isLocked == false) rotateMotor(angle, motor_id, MOTOR_TYPE);                
+                        if(isLocked == false) {
+                            pthread_mutex_lock(&motor_mutex);
+                            rotateMotor(angle, motor_id, MOTOR_TYPE); 
+                            pthread_mutex_unlock(&motor_mutex);     
+                        }          
                     }
                     else if(strncmp(ptr, "velocity:", 9) == 0)
                     {
                         ptr += 9;
                         double velocity = strtod(ptr, &ptr);
+                        pthread_mutex_lock(&motor_mutex);
                         setProfileVelocity(velocity, motor_id, MOTOR_TYPE);
+                        pthread_mutex_unlock(&motor_mutex);
+
                     }
                     // else if(strncmp(ptr, "san:", 4) == 0)
                     // {
@@ -375,7 +391,7 @@ void* control_threat(void* arg)
                     else if (strncmp(ptr, "torque:", 7) == 0)
                     {
                         ptr += 7;
-
+                        pthread_mutex_lock(&motor_mutex);
                         log_msg("torque started");
                         //char *end;
                         long torque = strtol(ptr, &ptr, 10);
@@ -390,7 +406,9 @@ void* control_threat(void* arg)
                             if (connect_to_all_motors() == 0)
                             {
                                 log_msg("Torqued on");
+                                pthread_mutex_lock(&motor_mutex);
                                 write(connfd, "on\n", strlen("on\n"));
+                                pthread_mutex_unlock(&motor_mutex);
                             }
                         }
                         else if(torque == 0)
@@ -398,6 +416,7 @@ void* control_threat(void* arg)
                             disconnect_all_motors();
                             log_msg("Torqued off");
                             write(connfd, "off\n", strlen("off\n"));
+                            pthread_mutex_unlock(&motor_mutex);
                         }
                         else 
                         {
@@ -423,8 +442,11 @@ void* control_threat(void* arg)
                         currentDegreesOfSize1 = angle1;
                         currentDegreesOfSize2 = angle2;
 			            log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
+                        pthread_mutex_lock(&motor_mutex);
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
+                        pthread_mutex_unlock(&motor_mutex);
+                        
                     }
                     // else if(strncmp(ptr, "wbr:", 4) == 0)
                     // {
@@ -544,6 +566,10 @@ void* control_motors_via_stream_threat(void* arg)
             usleep(1000000);
             continue;
         }
+        // if(atomic_load(&active_control_mode) != CONTROL_MODE_UDP) {
+        //     usleep(10000);
+        //     continue;
+        // }
         // if(get_time_ms() - atomic_load(&last_udp_packet_time) > 400)
         // {
         //     pthread_mutex_lock(&motor_mutex);
