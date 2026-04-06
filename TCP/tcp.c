@@ -11,9 +11,17 @@
 #include <time.h>
 #include <stdatomic.h>
 #include <pthread.h>
-
+#include <stdint.h>
 #include<fcntl.h>
-#include<sys/time.h>
+#include <time.h>
+
+uint64_t get_time_ms()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    return ts.tv_sec * 1000ULL + ts.tv_nsec / 1000000ULL;
+}
 
 
 #include "../MoorControl/motor.h"
