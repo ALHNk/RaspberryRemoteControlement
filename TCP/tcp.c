@@ -129,6 +129,7 @@ int connect_to_all_motors()
     //{
      //   return 0;
    // }
+    pthread_mutex_lock(&motor_mutex);
     for(int i = 0; i < ALL_MOTORS; i++)
     {
         if(connectMotor(i, MOTOR_TYPE) != 0 )
@@ -139,6 +140,7 @@ int connect_to_all_motors()
         
     }
     atomic_store(&torque_enabled, 1);
+    pthread_mutex_unlock(&motor_mutex);
     return 0;
 }
 
@@ -148,6 +150,7 @@ int disconnect_all_motors()
     //{
       //  return 0;
     //}
+    pthread_mutex_lock(&motor_mutex);
     for (int i = 0; i < ALL_MOTORS; i++)
     {
         disconnectMotor(i, MOTOR_TYPE);
@@ -155,6 +158,7 @@ int disconnect_all_motors()
         
     }
     atomic_store(&torque_enabled, 0);
+    pthread_mutex_unlock(&motor_mutex);
     return 0;
 }
 
@@ -585,33 +589,36 @@ void* control_motors_via_stream_threat(void* arg)
         s = control_state;
         pthread_mutex_unlock(&control_mutex);
         pthread_mutex_lock(&motor_mutex);
-        if(s.prot != 0)
+        if(atomic_load(&torque_enabled))
         {
-            double prot = s.prot / 45.0f;
-            float local_speed = prot * 5.0f;
+            if(s.prot != 0)
+            {
+                double prot = s.prot / 45.0f;
+                float local_speed = prot * 5.0f;
 
-            setGoalSpeed(-local_speed, s.motor_id, MOTOR_TYPE);
-            setGoalSpeed(-local_speed, s.motor_id + 1, MOTOR_TYPE);
-        }
-        else
-        {
-            isSan = 1;
-            globalSpeed = s.speed;
-            speedAngel = s.san;
+                setGoalSpeed(-local_speed, s.motor_id, MOTOR_TYPE);
+                setGoalSpeed(-local_speed, s.motor_id + 1, MOTOR_TYPE);
+            }
+            else
+            {
+                isSan = 1;
+                globalSpeed = s.speed;
+                speedAngel = s.san;
 
-            change_speed(globalSpeed, s.motor_id);
-        }
+                change_speed(globalSpeed, s.motor_id);
+            }
 
-        // if(s.wbr != 0)
-        // {
-        //     double td = s.wbr;
-        //     double k = fabs(td) / 70.0;
+            // if(s.wbr != 0)
+            // {
+            //     double td = s.wbr;
+            //     double k = fabs(td) / 70.0;
 
-        //     if(td > 0)
-        //         rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, s.motor_id, MOTOR_TYPE);
-        //     else
-        //         rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, s.motor_id+1, MOTOR_TYPE);
-        // }
+            //     if(td > 0)
+            //         rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, s.motor_id, MOTOR_TYPE);
+            //     else
+            //         rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, s.motor_id+1, MOTOR_TYPE);
+            // }
+        }        
 
         pthread_mutex_unlock(&motor_mutex);
 
