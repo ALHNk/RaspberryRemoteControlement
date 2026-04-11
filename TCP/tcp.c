@@ -56,7 +56,9 @@ pthread_mutex_t motor_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 atomic_long last_udp_packet_time;
 
-
+double prev_san = 0;
+double prev_speed = 0;
+double prev_prot = 0;
 
 typedef enum {
     CONTROL_MODE_NONE,
@@ -526,7 +528,7 @@ void* udp_control_thread(void* arg)
     struct sockaddr_in servaddr, cliaddr;
     socklen_t len = sizeof(cliaddr);
     ControlUDPPacket packet;
-    atomic_store(&last_udp_packet_time, get_time_ms());
+    // atomic_store(&last_udp_packet_time, get_time_ms());
 
     udpfd = socket(AF_INET, SOCK_DGRAM, 0);
     if(udpfd < 0) return NULL;
@@ -570,6 +572,7 @@ void* control_motors_via_stream_threat(void* arg)
             usleep(1000000);
             continue;
         }
+        
         // if(atomic_load(&active_control_mode) != CONTROL_MODE_UDP) {
         //     usleep(10000);
         //     continue;
@@ -587,6 +590,10 @@ void* control_motors_via_stream_threat(void* arg)
         ControlUDPPacket s;
         pthread_mutex_lock(&control_mutex);
         s = control_state;
+        if(s.san == prev_san && s.speed == prev_speed && s.prot == prev_prot)
+        {
+            return;
+        }
         pthread_mutex_unlock(&control_mutex);
         pthread_mutex_lock(&motor_mutex);
         if(atomic_load(&torque_enabled))
@@ -607,6 +614,9 @@ void* control_motors_via_stream_threat(void* arg)
 
                 change_speed(globalSpeed, s.motor_id);
             }
+            prev_prot = s.prot;
+            prev_san = s.san;
+            prev_speed = s.speed;
 
             // if(s.wbr != 0)
             // {
