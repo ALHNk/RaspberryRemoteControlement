@@ -56,9 +56,9 @@ pthread_mutex_t motor_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 atomic_long last_udp_packet_time;
 
-double prev_san = 0;
-double prev_speed = 0;
-double prev_prot = 0;
+float prev_san = 0;
+float prev_speed = 0;
+float prev_prot = 0;
 
 typedef enum {
     CONTROL_MODE_NONE,
@@ -546,14 +546,20 @@ void* udp_control_thread(void* arg)
 
     while(1)
     {
+        memset(&packet,0,sizeof(packet));
         int n = recvfrom(udpfd, &packet, sizeof(packet), 0,
                      (struct sockaddr*)&cliaddr, &len);
 
-        if(n != sizeof(packet))
+        if(n < sizeof(packet))
             continue;
 
         pthread_mutex_lock(&control_mutex);
         control_state = packet;
+        printf("UDP speed=%f san=%f prot=%f motor=%d\n",
+        packet.speed,
+        packet.san,
+        packet.prot,
+        packet.motor_id);
         pthread_mutex_unlock(&control_mutex);
     }
 
@@ -599,7 +605,7 @@ void* control_motors_via_stream_threat(void* arg)
         pthread_mutex_lock(&motor_mutex);
         if(atomic_load(&torque_enabled))
         {
-            if(s.prot != 0)
+            if(fabs(s.prot) > 0.01)
             {
                 printf("PROT EHEHEEHEH \n");
                 fflush(stdout);
