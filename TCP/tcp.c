@@ -131,7 +131,7 @@ int connect_to_all_motors()
     //{
      //   return 0;
    // }
-    pthread_mutex_lock(&motor_mutex);
+    // pthread_mutex_lock(&motor_mutex);
     for(int i = 0; i < ALL_MOTORS; i++)
     {
         if(connectMotor(i, MOTOR_TYPE) != 0 )
@@ -142,7 +142,7 @@ int connect_to_all_motors()
         
     }
     atomic_store(&torque_enabled, 1);
-    pthread_mutex_unlock(&motor_mutex);
+    // pthread_mutex_unlock(&motor_mutex);
     return 0;
 }
 
@@ -152,7 +152,7 @@ int disconnect_all_motors()
     //{
       //  return 0;
     //}
-    pthread_mutex_lock(&motor_mutex);
+    // pthread_mutex_lock(&motor_mutex);
     for (int i = 0; i < ALL_MOTORS; i++)
     {
         disconnectMotor(i, MOTOR_TYPE);
@@ -160,7 +160,7 @@ int disconnect_all_motors()
         
     }
     atomic_store(&torque_enabled, 0);
-    pthread_mutex_unlock(&motor_mutex);
+    // pthread_mutex_unlock(&motor_mutex);
     return 0;
 }
 
