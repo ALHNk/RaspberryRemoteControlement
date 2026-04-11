@@ -555,11 +555,6 @@ void* udp_control_thread(void* arg)
 
         pthread_mutex_lock(&control_mutex);
         control_state = packet;
-        printf("UDP speed=%f san=%f prot=%f motor=%d\n",
-        packet.speed,
-        packet.san,
-        packet.prot,
-        packet.motor_id);
         pthread_mutex_unlock(&control_mutex);
     }
 
