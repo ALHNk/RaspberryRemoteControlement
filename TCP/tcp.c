@@ -594,13 +594,16 @@ void* control_motors_via_stream_threat(void* arg)
             usleep(10000);
             continue;
         }
-        printf("STARING STREAMING CONTROL MOVEMENT");
+        printf("STARING STREAMING CONTROL MOVEMENT \n");
+        fflush(stdout);
         pthread_mutex_unlock(&control_mutex);
         pthread_mutex_lock(&motor_mutex);
         if(atomic_load(&torque_enabled))
         {
             if(s.prot != 0)
             {
+                printf("PROT EHEHEEHEH \n");
+                fflush(stdout);
                 double prot = s.prot / 45.0f;
                 float local_speed = prot * 5.0f;
 
@@ -609,6 +612,8 @@ void* control_motors_via_stream_threat(void* arg)
             }
             else
             {
+                printf("SAN SPEED EMCOIEMOIE \n");
+                fflush(stdout);
                 isSan = 1;
                 globalSpeed = s.speed;
                 speedAngel = s.san;
