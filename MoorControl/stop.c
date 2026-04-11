@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "dynamixel_sdk/dynamixel_sdk.h"
 
-#define DEVICENAME "/dev/serial/dynamixel"
+#define DEVICENAME "/dev/dynamixel"
 #define BAUDRATE 115200
 
 #define PROTOCOL_VERSION 2.0
