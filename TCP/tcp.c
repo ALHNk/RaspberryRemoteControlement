@@ -594,6 +594,7 @@ void* control_motors_via_stream_threat(void* arg)
         {
             return;
         }
+        printf("STARING STREAMING CONTROL MOVEMENT");
         pthread_mutex_unlock(&control_mutex);
         pthread_mutex_lock(&motor_mutex);
         if(atomic_load(&torque_enabled))
