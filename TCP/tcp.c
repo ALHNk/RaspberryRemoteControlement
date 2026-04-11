@@ -591,7 +591,6 @@ void* control_motors_via_stream_threat(void* arg)
         if(s.san == prev_san && s.speed == prev_speed && s.prot == prev_prot)
         {
             pthread_mutex_unlock(&control_mutex);
-            usleep(10000);
             continue;
         }
         printf("STARING STREAMING CONTROL MOVEMENT \n");
