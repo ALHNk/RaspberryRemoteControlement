@@ -66,7 +66,7 @@ typedef enum {
     CONTROL_MODE_UDP
 } ControlMode;
 
-atomic_int active_control_mode = ATOMIC_VAR_INIT(CONTROL_MODE_NONE);
+// atomic_int active_control_mode = ATOMIC_VAR_INIT(CONTROL_MODE_NONE);
 
 int disconnect_all_motors();
 void handle_sigint(int sig)
@@ -318,7 +318,7 @@ void* control_threat(void* arg)
             {
                 char *ptr = line;
                 uint8_t motor_id = 0;
-                atomic_store(&active_control_mode, CONTROL_MODE_TCP);
+                // atomic_store(&active_control_mode, CONTROL_MODE_TCP);
                 while(*ptr)
                 {
                     if(strncmp(ptr, "lock:", 5) == 0)
@@ -412,9 +412,7 @@ void* control_threat(void* arg)
                             if (connect_to_all_motors() == 0)
                             {
                                 log_msg("Torqued on");
-                                pthread_mutex_lock(&motor_mutex);
                                 write(connfd, "on\n", strlen("on\n"));
-                                pthread_mutex_unlock(&motor_mutex);
                             }
                         }
                         else if(torque == 0)
@@ -422,12 +420,13 @@ void* control_threat(void* arg)
                             disconnect_all_motors();
                             log_msg("Torqued off");
                             write(connfd, "off\n", strlen("off\n"));
-                            pthread_mutex_unlock(&motor_mutex);
+                            
                         }
                         else 
                         {
                             log_msg("Invalid torque");
                         }
+                        pthread_mutex_unlock(&motor_mutex);
                     }
                     // else if(strncmp(ptr, "prot:", 5) == 0)
                     // {
@@ -564,7 +563,6 @@ void* udp_control_thread(void* arg)
 
 void* control_motors_via_stream_threat(void* arg)
 {
-    printf("CONTROL STATE IS STARTED ____---------");
     while(1)
     {
         if(!atomic_load(&torque_enabled))
@@ -592,7 +590,9 @@ void* control_motors_via_stream_threat(void* arg)
         s = control_state;
         if(s.san == prev_san && s.speed == prev_speed && s.prot == prev_prot)
         {
-            return;
+            pthread_mutex_unlock(&control_mutex);
+            usleep(10000);
+            continue;
         }
         printf("STARING STREAMING CONTROL MOVEMENT");
         pthread_mutex_unlock(&control_mutex);
