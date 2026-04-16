@@ -442,8 +442,8 @@ void* control_threat(void* arg)
                     {
                         ptr += 10;
                         double td = strtod(ptr, &ptr);                        
-                        double angle1 = 109.61 - td * 280;
-                        double angle2 =  -109.61 + td * 280;
+                        double angle1 = 109.61 - td * 270;
+                        double angle2 =  -109.61 + td * 270;
                         currentDegreesOfSize1 = angle1;
                         currentDegreesOfSize2 = angle2;
 			            log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
