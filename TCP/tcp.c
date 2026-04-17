@@ -666,9 +666,9 @@ void* control_motors_via_stream_threat(void* arg)
                 double k = fabs(td) / 70.0;
 
                 if(td > 0)
-                    rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, s.motor_id, MOTOR_TYPE);
+                    rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, 0, MOTOR_TYPE);
                 else
-                    rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, s.motor_id+1, MOTOR_TYPE); 
+                    rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, 1, MOTOR_TYPE); 
             }
                
             prev_prot = s.prot;
