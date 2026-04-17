@@ -660,7 +660,7 @@ void* control_motors_via_stream_threat(void* arg)
                 change_speed(globalSpeed, 2);
             }
             
-            if(fabs(s.wbr - prev_wbr) >= 15)
+            if(fabs(s.wbr - prev_wbr) >= 1)
             {
                 double td = s.wbr;
                 double k = fabs(td) / 70.0;
