@@ -263,8 +263,10 @@ void* control_threat(void* arg)
         double motor2limitlow = getLimitLow(1, MOTOR_TYPE);
         double motor2limitup  = getLimitUp(1, MOTOR_TYPE);
         
+        pthread_mutex_lock(&motor_mutex);
         currentDegreesOfSize1 = getPosition(0, MOTOR_TYPE);
         currentDegreesOfSize2 = getPosition(1, MOTOR_TYPE);
+        pthread_mutex_unlock(&motor_mutex);
 
         char reply[512];
         snprintf(reply, sizeof(reply),
@@ -445,10 +447,11 @@ void* control_threat(void* arg)
                         double td = strtod(ptr, &ptr);                        
                         double angle1 = 109.61 - td * 270;
                         double angle2 =  -109.61 + td * 270;
-                        currentDegreesOfSize1 = angle1;
-                        currentDegreesOfSize2 = angle2;
+                        
 			            log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
                         pthread_mutex_lock(&motor_mutex);
+                        currentDegreesOfSize1 = angle1;
+                        currentDegreesOfSize2 = angle2;
                         rotateMotor(angle1, motor_id, MOTOR_TYPE);
                         rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
                         pthread_mutex_unlock(&motor_mutex);
