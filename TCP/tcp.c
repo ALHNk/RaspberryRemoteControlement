@@ -59,6 +59,7 @@ atomic_long last_udp_packet_time;
 float prev_san = 0;
 float prev_speed = 0;
 float prev_prot = 0;
+float prev_wbr = 0;
 
 typedef enum {
     CONTROL_MODE_NONE,
@@ -548,15 +549,12 @@ void* control_threat(void* arg)
 }
 pthread_mutex_t control_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct
+typedef struct __attribute__((packed))
 {
     float speed;
     float san;
     float prot;
-    uint8_t motor_id;
-    uint8_t pad1;
-    uint8_t pad2;
-    uint8_t pad3;
+    float wbr;
 } ControlUDPPacket;
 
 ControlUDPPacket control_state;
@@ -630,7 +628,7 @@ void* control_motors_via_stream_threat(void* arg)
         ControlUDPPacket s;
         pthread_mutex_lock(&control_mutex);
         s = control_state;
-        if(s.san == prev_san && s.speed == prev_speed && s.prot == prev_prot)
+        if(s.san == prev_san && s.speed == prev_speed && s.prot == prev_prot && s.wbr == prev_wbr)
         {
             pthread_mutex_unlock(&control_mutex);
             continue;
@@ -648,8 +646,8 @@ void* control_motors_via_stream_threat(void* arg)
                 double prot = s.prot / 45.0f;
                 float local_speed = prot * 5.0f;
 
-                setGoalSpeed(-local_speed, s.motor_id, MOTOR_TYPE);
-                setGoalSpeed(-local_speed, s.motor_id + 1, MOTOR_TYPE);
+                setGoalSpeed(-local_speed, 2, MOTOR_TYPE);
+                setGoalSpeed(-local_speed, 3, MOTOR_TYPE);
             }
             else
             {
@@ -659,22 +657,25 @@ void* control_motors_via_stream_threat(void* arg)
                 globalSpeed = s.speed;
                 speedAngel = s.san;
 
-                change_speed(globalSpeed, s.motor_id);
+                change_speed(globalSpeed, 2);
             }
+            
+            if(fabs(s.wbr - prev_prot) >= 15)
+            {
+                double td = s.wbr;
+                double k = fabs(td) / 70.0;
+
+                if(td > 0)
+                    rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, s.motor_id, MOTOR_TYPE);
+                else
+                    rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, s.motor_id+1, MOTOR_TYPE); 
+            }
+               
             prev_prot = s.prot;
             prev_san = s.san;
             prev_speed = s.speed;
-
-            // if(s.wbr != 0)
-            // {
-            //     double td = s.wbr;
-            //     double k = fabs(td) / 70.0;
-
-            //     if(td > 0)
-            //         rotateMotor(currentDegreesOfSize1 + (-177.78 - currentDegreesOfSize1) * k, s.motor_id, MOTOR_TYPE);
-            //     else
-            //         rotateMotor(currentDegreesOfSize2 + (-109.63 - currentDegreesOfSize2) * k, s.motor_id+1, MOTOR_TYPE);
-            // }
+            prev_wbr = s.wbr;
+            
         }        
 
         pthread_mutex_unlock(&motor_mutex);
