@@ -505,20 +505,6 @@ void* control_threat(void* arg)
                         log_msg("delay_estimate,cmd_id=%d,timestamp_ms=%lld,event=RECEIVED,value=%f",
                                 cmd_id, recv_ms, td);
 
-                        double angle1 = -177.78 + td * 287.41;
-                        double angle2 =  177.78 - td * 287.41;
-                        log_msg("td: %f, ang1: %f, ang2: %f", td, angle1, angle2);
-
-                        rotateMotor(angle1, motor_id, MOTOR_TYPE);
-
-                        // Timestamp after execution
-                        clock_gettime(CLOCK_REALTIME, &ts);
-                        long long exec_ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
-                        log_msg("delay_estimate,cmd_id=%d,timestamp_ms=%lld,event=EXECUTED,value=%f",
-                                cmd_id, exec_ms, td);
-
-                        rotateMotor(angle2, motor_id + 1, MOTOR_TYPE);
-
                         clock_gettime(CLOCK_REALTIME, &ts);
                         long long done_ms = (long long)ts.tv_sec * 1000LL + ts.tv_nsec / 1000000LL;
                         log_msg("delay_estimate,cmd_id=%d,timestamp_ms=%lld,event=DONE,value=%f",
